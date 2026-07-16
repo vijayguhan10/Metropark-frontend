@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+	color-scheme: light;
+	--app-bg: #ffffff;
+	--app-bg-elevated: rgba(255, 255, 255, 0.92);
+	--app-surface: rgba(0, 0, 0, 0.04);
+	--app-surface-strong: rgba(17, 24, 39, 0.08);
+	--app-border: rgba(0, 0, 0, 0.12);
+	--app-text: #0f172a;
+	--app-muted: #000000;
+	--app-violet: #8c66ff;
+	--app-violet-strong: #7c3aed;
+	--app-emerald: #4ade80;
+	--app-rose: #fb7185;
+	--app-amber: #fbbf24;
+}
+
+@layer base {
+	html,
+	body,
+	#root {
+		min-height: 100%;
+	}
+
+	body {
+		margin: 0;
+		background:
+			radial-gradient(circle at top, rgba(167, 139, 250, 0.08), transparent 30%),
+			radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.06), transparent 18%),
+			radial-gradient(circle at 20% 80%, rgba(251, 113, 133, 0.06), transparent 20%),
+			var(--app-bg);
+		color: var(--app-text);
+		font-family: "Raleway", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	* {
+		box-sizing: border-box;
+	}
+
+	button,
+	input,
+	select,
+	textarea {
+		font: inherit;
+	}
+
+	::selection {
+		background: rgba(167, 139, 250, 0.24);
+		color: #0f172a;
+	}
+}
