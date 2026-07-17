@@ -16,7 +16,7 @@ export default function Layout() {
         <Header />
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-10 space-y-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
           <Outlet />
         </div>
       </main>

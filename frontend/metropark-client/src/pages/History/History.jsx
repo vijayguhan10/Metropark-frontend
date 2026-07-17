@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Filter,
-  Add,
+  Plus,
   ChevronLeft,
   ChevronRight,
   Receipt,
@@ -10,14 +10,18 @@ import {
   MapPin,
   Dock,
   Compass,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Clock,
+  Car,
 } from 'lucide-react';
 import { reservations, user } from '../../data/mockData';
-import { Card, Badge, Button } from '../../components/UI';
 
 const statusConfig = {
-  active: { variant: 'success', label: 'ACTIVE' },
-  exited: { variant: 'default', label: 'EXITED' },
-  cancelled: { variant: 'error', label: 'CANCELLED' },
+  active: { variant: 'success', label: 'ACTIVE', icon: AlertCircle, color: 'text-warning' },
+  exited: { variant: 'default', label: 'EXITED', icon: CheckCircle, color: 'text-success' },
+  cancelled: { variant: 'error', label: 'CANCELLED', icon: XCircle, color: 'text-error' },
 };
 
 export default function History() {
@@ -26,91 +30,94 @@ export default function History() {
   const formatTime = (dateString) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 animate-fade-in-up">
       {/* Page Header */}
-      <div>
-        <h1 className="text-headline-lg font-headline-lg text-on-surface mb-2">Reservations & History</h1>
-        <p className="text-body-md font-body-md text-on-surface-variant">Manage your current parking sessions and review past transactions.</p>
+      <div className="page-luxury-header">
+        <h1 className="page-luxury-title">Reservations & History</h1>
+        <p className="page-luxury-subtitle">Manage your current parking sessions and review past transactions.</p>
       </div>
 
       {/* Filters & Actions */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="flex gap-2">
-          <Button variant="primary" leftIcon={<Filter className="w-4 h-4" />} size="sm">
+        <div className="flex gap-2 flex-wrap">
+          <button className="btn-luxury-ghost">
+            <Filter className="w-4 h-4" />
             All Sessions
-          </Button>
-          <Button variant="outline" size="sm">Active Only</Button>
+          </button>
+          <button className="btn-luxury-outline">Active Only</button>
         </div>
-        <Button variant="secondary" leftIcon={<Add className="w-4 h-4" />}>
+        <Link to="/explorer" className="btn-luxury-secondary">
+          <Plus className="w-4 h-4" />
           Book New Slot
-        </Button>
+        </Link>
       </div>
 
       {/* Sessions Table */}
-      <Card variant="outlined" className="overflow-hidden">
+      <div className="luxury-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-surface-container text-on-surface-variant border-b border-outline-variant">
+          <table className="table-luxury">
+            <thead>
               <tr>
-                <th className="px-6 py-4 text-label-md font-label-md">Location & Slot</th>
-                <th className="px-6 py-4 text-label-md font-label-md">Status</th>
-                <th className="px-6 py-4 text-label-md font-label-md">Entry Time</th>
-                <th className="px-6 py-4 text-label-md font-label-md">Exit Time</th>
-                <th className="px-6 py-4 text-label-md font-label-md text-right">Amount</th>
-                <th className="px-6 py-4 text-label-md font-label-md text-right">Actions</th>
+                <th className="px-6 py-4">Location & Slot</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Entry Time</th>
+                <th className="px-6 py-4">Exit Time</th>
+                <th className="px-6 py-4 text-right">Amount</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="divide-y divide-outline-variant/50">
               {reservations.map((reservation) => {
                 const config = statusConfig[reservation.status] || statusConfig.exited;
                 const isActive = reservation.status === 'active';
                 const isCancelled = reservation.status === 'cancelled';
+                const Icon = config.icon;
 
                 return (
-                  <tr key={reservation.id} className={`hover:bg-surface-container-low transition-colors ${isCancelled ? 'opacity-75' : ''}`}>
+                  <tr key={reservation.id} className={`transition-colors duration-150 ${isCancelled ? 'opacity-75' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className={`text-body-md font-bold ${isCancelled ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>
                           {reservation.locationName}
                         </span>
-                        <span className="text-label-sm font-label-sm text-on-surface-variant">
+                        <span className="text-label-sm font-medium text-on-surface-variant">
                           Slot: {reservation.slotId} ({reservation.floor})
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={config.variant} size="sm">
+                      <span className={`badge-luxury badge-luxury-${config.variant} flex items-center gap-1`}>
+                        <Icon className={`w-3 h-3 ${config.color}`} />
                         {config.label}
-                      </Badge>
+                      </span>
                     </td>
-                    <td className="px-6 py-4 text-body-md font-body-md text-on-surface">
+                    <td className="px-6 py-4 text-body-md text-on-surface">
                       {formatDate(reservation.entryTime)}, {formatTime(reservation.entryTime)}
                     </td>
-                    <td className="px-6 py-4 text-body-md font-body-md">
-                      {reservation.exitTime
-                        ? (
-                          <>
-                            {formatDate(reservation.exitTime)}, {formatTime(reservation.exitTime)}
-                          </>
-                        )
-                        : (
-                          <span className="text-on-surface-variant italic">Ongoing...</span>
-                        )}
+                    <td className="px-6 py-4 text-body-md">
+                      {reservation.exitTime ? (
+                        <>
+                          {formatDate(reservation.exitTime)}, {formatTime(reservation.exitTime)}
+                        </>
+                      ) : (
+                        <span className="text-on-surface-variant italic">Ongoing...</span>
+                      )}
                     </td>
-                    <td className="px-6 py-4 text-right text-body-md font-bold text-primary">
+                    <td className="px-6 py-4 text-right text-body-md font-medium text-primary">
                       {formatCurrency(reservation.totalAmount)}
                     </td>
                     <td className="px-6 py-4 text-right">
                       {isActive ? (
-                        <Button variant="ghost" size="sm" className="text-primary-container font-bold">
+                        <button className="btn-luxury-ghost text-primary font-semibold">
                           Extend Duration
-                        </Button>
+                        </button>
                       ) : isCancelled ? (
-                        <span className="text-label-sm font-label-sm text-outline italic">Refund Issued</span>
+                        <span className="text-label-sm font-medium text-outline italic">Refund Issued</span>
                       ) : (
-                        <Button variant="ghost" size="sm" leftIcon={<Receipt className="w-4 h-4" />}>
+                        <button className="btn-luxury-ghost">
+                          <Receipt className="w-4 h-4" />
                           View Invoice
-                        </Button>
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -119,21 +126,21 @@ export default function History() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
 
       {/* Pagination/Footer Stats */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-label-md font-label-md text-on-surface-variant">Showing 5 of 42 sessions</p>
+        <p className="text-label-md font-medium text-on-surface-variant">Showing 5 of 42 sessions</p>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" className="w-10 h-10 p-0">
+          <button className="btn-luxury-icon w-10 h-10 p-0" disabled>
             <ChevronLeft className="w-5 h-5" />
-          </Button>
-          <Button variant="primary" size="sm" className="w-10 h-10 p-0">1</Button>
-          <Button variant="ghost" size="sm" className="w-10 h-10 p-0">2</Button>
-          <Button variant="ghost" size="sm" className="w-10 h-10 p-0">3</Button>
-          <Button variant="ghost" size="sm" className="w-10 h-10 p-0">
+          </button>
+          <button className="btn-luxury-primary w-10 h-10 p-0">1</button>
+          <button className="btn-luxury-ghost w-10 h-10 p-0">2</button>
+          <button className="btn-luxury-ghost w-10 h-10 p-0">3</button>
+          <button className="btn-luxury-ghost w-10 h-10 p-0">
             <ChevronRight className="w-5 h-5" />
-          </Button>
+          </button>
         </div>
       </div>
     </div>

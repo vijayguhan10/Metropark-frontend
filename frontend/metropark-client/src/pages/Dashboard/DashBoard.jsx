@@ -4,15 +4,21 @@ import {
   Car,
   MapPin,
   Filter,
-  BoxIcon,
-  //AddCircle,
+  Box,
   ChevronLeft,
   ChevronRight,
   Navigation,
   Wallet as WalletIcon,
+  Clock,
+  Zap,
+  Shield,
+  TrendingUp,
+  Map as MapIcon,
+  Calendar,
+  Star,
+  History,
 } from 'lucide-react';
 import { parkingLocations, dashboardStats, user } from '../../data/mockData';
-import { Button, Card, Badge } from '../../components/UI';
 
 export default function Dashboard() {
   const [currentLocationIndex, setCurrentLocationIndex] = useState(0);
@@ -27,168 +33,266 @@ export default function Dashboard() {
     setCurrentLocationIndex((prev) => (prev - 1 + parkingLocations.length) % parkingLocations.length);
   };
 
+  const getAvailabilityColor = (slots) => {
+    if (slots > 10) return 'text-success';
+    if (slots > 3) return 'text-warning';
+    return 'text-error';
+  };
+
+  const getAvailabilityBg = (slots) => {
+    if (slots > 10) return 'bg-success-light';
+    if (slots > 3) return 'bg-warning-light';
+    return 'bg-error-light';
+  };
+
+  const getAvailabilityBorder = (slots) => {
+    if (slots > 10) return 'border-success/20';
+    if (slots > 3) return 'border-warning/20';
+    return 'border-error/20';
+  };
+
   return (
-    <div className="space-y-8">
-      {/* Hero/Welcome Section with Asymmetric Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Summary Card (Upcoming Reservation) */}
-        <div className="lg:col-span-5 bg-primary-container text-on-primary-container p-6 rounded-xl relative overflow-hidden flex flex-col justify-between">
-          <div className="relative z-10">
-            <Badge variant="primary" className="mb-4" size="sm">
-              Upcoming Reservation
-            </Badge>
-            <h2 className="text-headline-md font-headline-md mb-1">
-              {dashboardStats.activeReservation.locationName}
-            </h2>
-            <p className="text-body-md opacity-80">
-              Slot {dashboardStats.activeReservation.slot} • {dashboardStats.activeReservation.floor}
-            </p>
-          </div>
-          <div className="mt-8 relative z-10 flex items-end justify-between">
-            <div>
-              <p className="text-label-sm opacity-60 uppercase tracking-widest">Entry Time</p>
-              <p className="text-headline-md font-bold">{dashboardStats.activeReservation.entryTime}</p>
-            </div>
-            <Button variant="secondary" size="md">
-              Get Directions
-              <Navigation className="w-4 h-4" />
-            </Button>
-          </div>
-          {/* Abstract Background Decoration */}
-          <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
-        </div>
-
-        {/* Market Insights / Stats */}
-        <div className="lg:col-span-7 grid grid-cols-2 gap-6">
-          <Card variant="outlined">
-            <div className="flex flex-col justify-center">
-              <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
-                <Car className="w-7 h-7 text-secondary" />
-              </div>
-              <p className="text-label-sm text-on-surface-variant uppercase">Average Search Time</p>
-              <p className="text-headline-md font-black">{dashboardStats.averageSearchTime}</p>
-            </div>
-          </Card>
-          <Card variant="outlined">
-            <div className="flex flex-col justify-center">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <WalletIcon className="w-7 h-7 text-primary" />
-              </div>
-              <p className="text-label-sm text-on-surface-variant uppercase">Monthly Savings</p>
-              <p className="text-headline-md font-black">{dashboardStats.monthlySavings}</p>
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      {/* Featured Locations Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Welcome Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h3 className="text-headline-md font-headline-md text-on-surface">Explore Nearby</h3>
-          <p className="text-body-md text-on-surface-variant">Real-time availability in your current area</p>
+          <h1 className="text-display-sm text-on-surface font-semibold tracking-tight">
+            Welcome back, {user.name.split(' ')[0]}
+          </h1>
+          <p className="text-body-md text-on-surface-variant mt-1">
+            Here's your parking overview for today
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filters
-          </Button>
-          <Button variant="ghost" size="sm" leftIcon={<BoxIcon className="w-4 h-4" />}>
-            Grid
-          </Button>
+        <div className="flex items-center gap-3">
+          <Link to="/explorer" className="btn-luxury-outline">
+            <Filter className="w-4 h-4" />
+            Explore Parking
+          </Link>
+          <Link to="/checkout" className="btn-luxury-primary">
+            <Navigation className="w-4 h-4" />
+            Book a Slot
+          </Link>
         </div>
       </div>
 
-      {/* Location Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {locationsToShow.map((location, index) => (
-          <Card key={location.id} variant="outlined" className="group overflow-hidden flex flex-col hover:border-primary transition-all">
-            <div className="relative h-48 overflow-hidden">
-              <img
-                src={location.image}
-                alt={location.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full border border-outline-variant flex items-center gap-1">
-                <span
-                  className={`w-2 h-2 rounded-full animate-pulse ${
-                    location.availableSlots > 10 ? 'bg-secondary' : location.availableSlots > 3 ? 'bg-warning' : 'bg-error'
-                  }`}
+      {/* Active Reservation Card */}
+      {dashboardStats.activeReservation && (
+        <div className="luxury-card-elevated p-6 relative overflow-hidden">
+          <div className="absolute inset-0  from-primary-light to-secondary-light opacity-10" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-primary-light rounded-2xl flex items-center justify-center">
+                <MapPin className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <span className="badge-luxury badge-luxury-primary">Active Reservation</span>
+                <h2 className="text-headline-md font-bold text-on-surface mt-2">
+                  {dashboardStats.activeReservation.locationName}
+                </h2>
+                <p className="text-label-md text-on-surface-variant mt-1">
+                  Slot {dashboardStats.activeReservation.slot} • {dashboardStats.activeReservation.floor} • {dashboardStats.activeReservation.zone}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 sm:ml-auto">
+              <div className="text-right hidden sm:block">
+                <p className="text-label-sm text-on-surface-variant uppercase tracking-wider">Time Remaining</p>
+                <p className="text-headline-lg font-bold text-primary" id="dashboard-timer">2h 35m</p>
+              </div>
+              <Link to="/checkout" className="btn-luxury-primary">
+                <Navigation className="w-4 h-4" />
+                View Details
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Grid */}
+      <div className="grid-luxury grid-luxury-3">
+        {/* Stat 1: Average Search Time */}
+        <div className="stat-luxury">
+          <div className="stat-luxury-icon bg-primary-light text-primary">
+            <Clock className="w-6 h-6" />
+          </div>
+          <div className="stat-luxury-value font-semibold">{dashboardStats.averageSearchTime}</div>
+          <div className="stat-luxury-label">Avg Search Time</div>
+          <div className="stat-luxury-trend stat-luxury-trend-positive">
+            <TrendingUp className="w-4 h-4" />
+            <span>12% faster than last month</span>
+          </div>
+        </div>
+
+        {/* Stat 2: Monthly Savings */}
+        <div className="stat-luxury">
+          <div className="stat-luxury-icon bg-secondary-light text-secondary">
+            <WalletIcon className="w-6 h-6" />
+          </div>
+          <div className="stat-luxury-value font-semibold">{dashboardStats.monthlySavings}</div>
+          <div className="stat-luxury-label">Monthly Savings</div>
+          <div className="stat-luxury-trend stat-luxury-trend-positive">
+            <TrendingUp className="w-4 h-4" />
+            <span>8% more than last month</span>
+          </div>
+        </div>
+
+        {/* Stat 3: Total Bookings */}
+        <div className="stat-luxury">
+          <div className="stat-luxury-icon bg-tertiary-light text-tertiary">
+            <Car className="w-6 h-6" />
+          </div>
+          <div className="stat-luxury-value">{dashboardStats.totalBookings}</div>
+          <div className="stat-luxury-label">Total Bookings</div>
+          <div className="stat-luxury-trend stat-luxury-trend-positive">
+            <TrendingUp className="w-4 h-4" />
+            <span>5 bookings this month</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid-luxury grid-luxury-4 gap-4">
+        <Link to="/explorer" className="luxury-card p-5 text-center group hover:shadow-luxury-lg transition-all duration-300">
+          <div className="w-12 h-12 mx-auto mb-3 bg-primary-light rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <MapIcon className="w-6 h-6 text-primary" />
+          </div>
+          <h3 className="text-title-md font-semibold text-on-surface">Explore</h3>
+          <p className="text-label-sm text-on-surface-variant mt-1">Find parking near you</p>
+        </Link>
+        <Link to="/map" className="luxury-card p-5 text-center group hover:shadow-luxury-lg transition-all duration-300">
+          <div className="w-12 h-12 mx-auto mb-3 bg-secondary-light rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <MapPin className="w-6 h-6 text-secondary" />
+          </div>
+          <h3 className="text-title-md font-semibold text-on-surface">Live Map</h3>
+          <p className="text-label-sm text-on-surface-variant mt-1">Real-time availability</p>
+        </Link>
+        <Link to="/reservations" className="luxury-card p-5 text-center group hover:shadow-luxury-lg transition-all duration-300">
+          <div className="w-12 h-12 mx-auto mb-3 bg-tertiary-light rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <Calendar className="w-6 h-6 text-tertiary" />
+          </div>
+          <h3 className="text-title-md font-semibold text-on-surface">My Bookings</h3>
+          <p className="text-label-sm text-on-surface-variant mt-1">Manage reservations</p>
+        </Link>
+        <Link to="/history" className="luxury-card p-5 text-center group hover:shadow-luxury-lg transition-all duration-300">
+          <div className="w-12 h-12 mx-auto mb-3 bg-warning-light rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+            <History className="w-6 h-6 text-warning" />
+          </div>
+          <h3 className="text-title-md font-semibold text-on-surface">History</h3>
+          <p className="text-label-sm text-on-surface-variant mt-1">Past transactions</p>
+        </Link>
+      </div>
+
+      {/* Featured Locations */}
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-headline-md font-semibold text-on-surface">Explore Nearby</h2>
+            <p className="text-body-md text-on-surface-variant mt-1">Real-time availability in your area</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="btn-luxury-ghost">
+              <Filter className="w-4 h-4" />
+              Filters
+            </button>
+            <button className="btn-luxury-ghost">
+              <Box className="w-4 h-4" />
+              Grid
+            </button>
+          </div>
+        </div>
+
+        <div className="grid-luxury grid-luxury-3">
+          {locationsToShow.map((location, index) => (
+            <article
+              key={location.id}
+              className="luxury-card overflow-hidden group flex flex-col"
+            >
+              <div className="relative h-48 overflow-hidden">
+                <img
+                  src={location.image}
+                  alt={location.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
-                <span className="text-label-sm font-bold text-on-surface">
-                  {location.availableSlots} slots available
-                </span>
-              </div>
-            </div>
-            <div className="p-6 space-y-3 flex-1 flex flex-col">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="text-body-lg font-bold text-on-surface">{location.name}</h4>
-                  <p className="text-label-md text-on-surface-variant">{location.address}</p>
+                <div className="absolute top-4 right-4">
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-md bg-white/90 border ${getAvailabilityBorder(location.availableSlots)}`}>
+                    <span
+                      className={`w-2 h-2 rounded-full animate-pulse ${getAvailabilityBg(location.availableSlots)}`}
+                    />
+                    <span className="text-label-sm font-semibold text-on-surface">
+                      {location.availableSlots} slots
+                    </span>
+                  </div>
                 </div>
-                <span className="text-body-lg font-black text-primary">
-                  ${location.pricePerHour.toFixed(2)}<span className="text-label-sm font-normal text-on-surface-variant">/hr</span>
-                </span>
+                <div className="absolute bottom-4 left-4 flex gap-2">
+                  <span className="badge-luxury badge-luxury-primary flex items-center gap-1">
+                    <Star className="w-3 h-3" style={{ fontVariationSettings: "'FILL' 1" }} />
+                    {location.rating}
+                  </span>
+                  <span className="badge-luxury badge-luxury-neutral flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {location.totalReviews} reviews
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {location.features.slice(0, 3).map((feature) => (
-                  <Badge key={feature} variant="default" size="sm">
-                    {feature}
-                  </Badge>
-                ))}
-                {location.features.length > 3 && (
-                  <Badge variant="default" size="sm">
-                    +{location.features.length - 3} more
-                  </Badge>
-                )}
+              <div className="p-5 space-y-4 flex-1 flex flex-col">
+                <div>
+                  <h3 className="text-title-lg font-bold text-on-surface">{location.name}</h3>
+                  <p className="text-label-md text-on-surface-variant mt-1">{location.address}</p>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-headline-sm font-bold text-primary">
+                    ${location.pricePerHour.toFixed(2)}<span className="text-label-md font-normal text-on-surface-variant">/hr</span>
+                  </span>
+                  <span className="badge-luxury badge-luxury-neutral">{location.floors} Floors</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {location.features.slice(0, 3).map((feature) => (
+                    <span key={feature} className="badge-luxury badge-luxury-neutral text-label-sm">
+                      {feature}
+                    </span>
+                  ))}
+                  {location.features.length > 3 && (
+                    <span className="badge-luxury badge-luxury-neutral text-label-sm">
+                      +{location.features.length - 3} more
+                    </span>
+                  )}
+                </div>
+                <Link
+                  to={`/explorer?location=${location.id}`}
+                  className="btn-luxury-outline w-full mt-auto justify-center"
+                >
+                  View & Book
+                </Link>
               </div>
-              <Button
-                variant="outline"
-                fullWidth
-                className="mt-auto"
-                onClick={() => console.log('Book slot at', location.name)}
-              >
-                View & Book
-              </Button>
-            </div>
-          </Card>
-        ))}
+            </article>
+          ))}
+        </div>
       </div>
 
-      {/* Real-time Map Teaser */}
-      <Card variant="outlined" className="relative h-64 overflow-hidden group">
-        <div className="absolute inset-0 bg-surface-dim">
-          <div className="w-full h-full bg-cover bg-center" style={{
-            backgroundImage: 'url(https://lh3.googleusercontent.com/aida-public/AB6AXuBwNCXeNyx1wPyPVt4ThA-UQ4egfG9j5NM-1fKBeLm6TLVHPev8R0vFgstBqvJCf7EyM2vzA-G8haZkjyHPeDpecGS9h7SSQGV7vNDax1o-oQAdCDbuZvdQdxgphl9evQHNT5elPvGnkCqIn6P_0ftjH1AhJzrkNY_BopA2-VWXiPMQzN49gzGf1Bk5FcLnbYgIECQ-_eT4DX2mMTFrXZSFRr2HW8ij4J7jPTvpCUO9Nluhd2El3fFosdqxGxQ_NSvB_lx76TSOm8AE)'
-          }} />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex flex-col justify-end p-6 text-white">
-          <h4 className="text-headline-md font-bold">Interactive Map</h4>
-          <p className="text-body-md opacity-90 max-w-md mt-1">
+      {/* Map Teaser Section */}
+      <div className="luxury-card-elevated relative overflow-hidden h-72">
+        <div className="absolute inset-0 bg-cover bg-center" style={{
+          backgroundImage: 'url(https://lh3.googleusercontent.com/aida-public/AB6AXuBwNCXeNyx1wPyPVt4ThA-UQ4egfG9j5NM-1fKBeLm6TLVHPev8R0vFgstBqvJCf7EyM2vzA-G8haZkjyHPeDpecGS9h7SSQGV7vNDax1o-oQAdCDbuZvdQdxgphl9evQHNT5elPvGnkCqIn6P_0ftjH1AhJzrkNY_BopA2-VWXiPMQzN49gzGf1Bk5FcLnbYgIECQ-_eT4DX2mMTFrXZSFRr2HW8ij4J7jPTvpCUO9Nluhd2El3fFosdqxGxQ_NSvB_lx76TSOm8AE)'
+        }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        <div className="absolute inset-0 p-6 flex flex-col justify-end text-white">
+          <span className="badge-luxury badge-luxury-secondary mb-3 w-fit">Live Map View</span>
+          <h3 className="text-headline-lg font-bold mb-2">Interactive Map</h3>
+          <p className="text-body-md opacity-90 max-w-md mb-4">
             Find live navigation and sensor-based slot occupancy tracking in the expanded map view.
           </p>
-          <Button
-            variant="primary"
-            className="mt-4 w-fit"
-            leftIcon={<MapPin className="w-4 h-4" />}
-            onClick={() => console.log('Open Map View')}
-          >
+          <Link to="/map" className="btn-luxury-secondary w-fit">
+            <MapIcon className="w-4 h-4" />
             Open Map View
-          </Button>
+          </Link>
         </div>
-      </Card>
+      </div>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-8 right-8 lg:bottom-12 lg:right-12 z-40">
-        <Button
-          variant="primary"
-          size="xl"
-          className="w-16 h-16 p-0 shadow-[0px_4px_12px_rgba(0,0,0,0.08)] group"
-          leftIcon={<MapPin className="w-7 h-7" />}
-          onClick={() => console.log('Book a Slot')}
-        >
-          <span className="absolute right-full mr-4 px-3 py-2 bg-inverse-surface text-inverse-on-surface text-label-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Book a Slot
-          </span>
-        </Button>
+      <div className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 z-40 lg:hidden">
+        <Link to="/checkout" className="btn-luxury-primary w-14 h-14 p-0 shadow-luxury-lg flex items-center justify-center">
+          <Navigation className="w-6 h-6" />
+        </Link>
       </div>
     </div>
   );

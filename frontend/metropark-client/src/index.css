@@ -1,130 +1,206 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #340075;
-  --color-primary-fixed: #ebdcff;
-  --color-primary-fixed-dim: #d3bbff;
-  --color-primary-container: #4c1d95;
-  --color-on-primary: #ffffff;
-  --color-on-primary-fixed: #260059;
-  --color-on-primary-fixed-variant: #572ba0;
-  --color-on-primary-container: #b994ff;
+  /* Luxury Professional Color Palette - Refined, Sophisticated, Muted Tones */
+  --color-primary: #7C5CFF;
+  --color-primary-hover: #6B46E8;
+  --color-primary-light: #F0EBFF;
+  --color-primary-container: #E5DDFF;
+  --color-on-primary: #FFFFFF;
+  --color-on-primary-container: #2D1B6B;
 
-  --color-secondary: #006c49;
-  --color-secondary-fixed: #6ffbbe;
-  --color-secondary-fixed-dim: #4edea3;
-  --color-secondary-container: #6cf8bb;
-  --color-on-secondary: #ffffff;
-  --color-on-secondary-fixed: #002113;
-  --color-on-secondary-fixed-variant: #005236;
-  --color-on-secondary-container: #00714d;
+  --color-secondary: #9B7BFF;
+  --color-secondary-hover: #8A66E8;
+  --color-secondary-light: #F5F2FF;
+  --color-secondary-container: #EDE8FF;
+  --color-on-secondary: #FFFFFF;
+  --color-on-secondary-container: #3D2D7A;
 
-  --color-tertiary: #560007;
-  --color-tertiary-fixed: #ffdad7;
-  --color-tertiary-fixed-dim: #ffb3ad;
-  --color-tertiary-container: #7f000f;
-  --color-on-tertiary: #ffffff;
-  --color-on-tertiary-fixed: #410004;
-  --color-on-tertiary-fixed-variant: #930013;
-  --color-on-tertiary-container: #ff817a;
+  --color-tertiary: #C084FC;
+  --color-tertiary-hover: #A855F7;
+  --color-tertiary-light: #FAF5FF;
+  --color-tertiary-container: #F3E8FF;
+  --color-on-tertiary: #FFFFFF;
+  --color-on-tertiary-container: #4A1A6B;
 
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-on-error: #ffffff;
-  --color-on-error-container: #93000a;
+  --color-success: #2E7D32;
+  --color-success-light: #E8F5E9;
+  --color-success-container: #C8E6C9;
+  --color-on-success: #FFFFFF;
+  --color-on-success-container: #1B5E20;
 
-  --color-surface: #f9f9f9;
-  --color-surface-bright: #f9f9f9;
-  --color-surface-dim: #dadada;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f3f3f3;
-  --color-surface-container: #eeeeee;
-  --color-surface-container-high: #e8e8e8;
-  --color-surface-container-highest: #e2e2e2;
-  --color-on-surface: #1b1b1b;
-  --color-on-surface-variant: #4a4452;
+  --color-warning: #F57F17;
+  --color-warning-light: #FFF8E1;
+  --color-warning-container: #FFECB3;
+  --color-on-warning: #FFFFFF;
+  --color-on-warning-container: #7B5B00;
 
-  --color-outline: #7b7483;
-  --color-outline-variant: #ccc3d4;
+  --color-error: #C62828;
+  --color-error-light: #FFEBEE;
+  --color-error-container: #FFCDD2;
+  --color-on-error: #FFFFFF;
+  --color-on-error-container: #B71C1C;
 
-  --color-inverse-surface: #303030;
-  --color-inverse-on-surface: #f1f1f1;
-  --color-inverse-primary: #d3bbff;
+  /* Surface Colors - Luxury Neutral Palette */
+  --color-surface: #FAFAFA;
+  --color-surface-bright: #FFFFFF;
+  --color-surface-dim: #F0F0F0;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #F5F5F5;
+  --color-surface-container: #EEEEEE;
+  --color-surface-container-high: #E8E8E8;
+  --color-surface-container-highest: #E0E0E0;
+  --color-on-surface: #1A1A2E;
+  --color-on-surface-variant: #4A4A5A;
 
-  --color-background: #f9f9f9;
-  --color-on-background: #1b1b1b;
+  --color-outline: #B0B0B8;
+  --color-outline-variant: #D0D0D8;
 
-  --color-surface-tint: #6f46b9;
+  --color-inverse-surface: #1A1A2E;
+  --color-inverse-on-surface: #F5F5F5;
+  --color-inverse-primary: #B0C4DE;
 
-  --font-family-headline-md: "Geist", sans-serif;
-  --font-family-label-sm: "Geist", sans-serif;
-  --font-family-body-md: "Geist", sans-serif;
-  --font-family-headline-lg: "Geist", sans-serif;
-  --font-family-display-lg: "Geist", sans-serif;
-  --font-family-body-lg: "Geist", sans-serif;
-  --font-family-headline-lg-mobile: "Geist", sans-serif;
-  --font-family-label-md: "Geist", sans-serif;
+  --color-background: #FAFAFA;
+  --color-on-background: #1A1A2E;
 
-  --font-size-headline-md: 24px;
-  --font-size-label-sm: 12px;
-  --font-size-body-md: 16px;
-  --font-size-headline-lg: 32px;
-  --font-size-display-lg: 48px;
-  --font-size-body-lg: 18px;
-  --font-size-headline-lg-mobile: 24px;
-  --font-size-label-md: 14px;
+  --color-surface-tint: #2D3A4A;
 
-  --line-height-headline-md: 32px;
-  --line-height-label-sm: 16px;
-  --line-height-body-md: 24px;
-  --line-height-headline-lg: 40px;
-  --line-height-display-lg: 56px;
-  --line-height-body-lg: 28px;
-  --line-height-headline-lg-mobile: 32px;
-  --line-height-label-md: 20px;
+  /* Luxury Typography - Using Raleway for elegant professional look */
+  --font-family-sans: "Raleway", system-ui, -apple-system, sans-serif;
+  --font-family-display: "Raleway", system-ui, -apple-system, sans-serif;
+  --font-family-mono: "JetBrains Mono", monospace;
 
-  --font-weight-headline-md: 600;
-  --font-weight-label-sm: 600;
-  --font-weight-body-md: 400;
-  --font-weight-headline-lg: 600;
-  --font-weight-display-lg: 700;
-  --font-weight-body-lg: 400;
-  --font-weight-headline-lg-mobile: 600;
-  --font-weight-label-md: 500;
+  --font-size-display-xl: 48px;
+  --font-size-display-lg: 40px;
+  --font-size-display-md: 32px;
+  --font-size-display-sm: 28px;
+  --font-size-headline-lg: 24px;
+  --font-size-headline-md: 20px;
+  --font-size-headline-sm: 18px;
+  --font-size-title-lg: 16px;
+  --font-size-title-md: 14px;
+  --font-size-title-sm: 12px;
+  --font-size-body-lg: 16px;
+  --font-size-body-md: 14px;
+  --font-size-body-sm: 12px;
+  --font-size-label-lg: 14px;
+  --font-size-label-md: 12px;
+  --font-size-label-sm: 11px;
 
-  --letter-spacing-label-sm: 0.05em;
-  --letter-spacing-headline-lg: -0.01em;
+  --line-height-display-xl: 56px;
+  --line-height-display-lg: 48px;
+  --line-height-display-md: 40px;
+  --line-height-display-sm: 36px;
+  --line-height-headline-lg: 32px;
+  --line-height-headline-md: 28px;
+  --line-height-headline-sm: 24px;
+  --line-height-title-lg: 24px;
+  --line-height-title-md: 20px;
+  --line-height-title-sm: 16px;
+  --line-height-body-lg: 24px;
+  --line-height-body-md: 20px;
+  --line-height-body-sm: 16px;
+  --line-height-label-lg: 20px;
+  --line-height-label-md: 16px;
+  --line-height-label-sm: 14px;
+
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --letter-spacing-display-xl: -0.02em;
   --letter-spacing-display-lg: -0.02em;
-  --letter-spacing-label-md: 0.01em;
+  --letter-spacing-display-md: -0.01em;
+  --letter-spacing-display-sm: -0.01em;
+  --letter-spacing-headline-lg: -0.01em;
+  --letter-spacing-headline-md: -0.01em;
+  --letter-spacing-headline-sm: 0;
+  --letter-spacing-title-lg: 0;
+  --letter-spacing-title-md: 0.01em;
+  --letter-spacing-title-sm: 0.02em;
+  --letter-spacing-body-lg: 0;
+  --letter-spacing-body-md: 0;
+  --letter-spacing-body-sm: 0.01em;
+  --letter-spacing-label-lg: 0.01em;
+  --letter-spacing-label-md: 0.02em;
+  --letter-spacing-label-sm: 0.03em;
 
-  --radius-default: 0.125rem;
-  --radius-lg: 0.25rem;
-  --radius-xl: 0.5rem;
-  --radius-full: 0.75rem;
+  /* Luxury Spacing Scale */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
 
-  --spacing-margin-mobile: 16px;
-  --spacing-lg: 40px;
-  --spacing-xs: 4px;
-  --spacing-xl: 64px;
-  --spacing-margin-desktop: 32px;
-  --spacing-base: 8px;
-  --spacing-gutter: 16px;
-  --spacing-md: 24px;
-  --spacing-sm: 12px;
+  /* Luxury Border Radius */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-full: 9999px;
+
+  /* Luxury Shadows - Subtle, Layered, Professional */
+  --shadow-xs: 0 1px 2px 0 rgb(26 26 46 / 0.03);
+  --shadow-sm: 0 1px 3px 0 rgb(26 26 46 / 0.04), 0 1px 2px -1px rgb(26 26 46 / 0.04);
+  --shadow-md: 0 4px 6px -1px rgb(26 26 46 / 0.05), 0 2px 4px -2px rgb(26 26 46 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(26 26 46 / 0.05), 0 4px 6px -4px rgb(26 26 46 / 0.05);
+  --shadow-xl: 0 20px 25px -5px rgb(26 26 46 / 0.05), 0 8px 10px -6px rgb(26 26 46 / 0.05);
+  --shadow-2xl: 0 25px 50px -12px rgb(26 26 46 / 0.06);
+  --shadow-inner: inset 0 2px 4px 0 rgb(26 26 46 / 0.03);
+  --shadow-luxury: 0 1px 4px 0 rgb(26 26 46 / 0.04), 0 4px 12px 0 rgb(26 26 46 / 0.05);
+  --shadow-luxury-lg: 0 2px 8px 0 rgb(26 26 46 / 0.05), 0 8px 24px 0 rgb(26 26 46 / 0.06);
+
+  /* Transitions - Smooth, Luxury Feel */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slower: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Scale */
+  --z-hide: -1;
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
 }
 
 @layer base {
-  * {
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
 
   html {
-    font-family: var(--font-family-body-md);
+    font-family: var(--font-family-sans);
     font-size: 16px;
     line-height: var(--line-height-body-md);
-    font-weight: var(--font-weight-body-md);
+    font-weight: var(--font-weight-regular);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -133,166 +209,643 @@
     min-height: 100vh;
   }
 
-  /* Custom scrollbar */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+  /* Luxury Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
 
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+  ::-webkit-scrollbar-track {
+    background: var(--color-surface-container-low);
   }
 
-  .custom-scrollbar::-webkit-scrollbar-thumb {
+  ::-webkit-scrollbar-thumb {
     background: var(--color-outline-variant);
-    border-radius: 10px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--color-surface-container-low);
   }
 
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-outline-variant) transparent;
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-outline);
   }
 
-  /* Material Symbols */
-  .material-symbols-outlined {
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    vertical-align: middle;
-  }
-
-  /* Focus styles */
-  *:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+  ::-webkit-scrollbar-corner {
+    background: var(--color-surface-container-low);
   }
 
   /* Selection */
   ::selection {
-    background-color: var(--color-primary-fixed-dim);
-    color: var(--color-on-primary-fixed);
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+  }
+
+  /* Focus Visible */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+}
+
+/* Typography Utilities - Using @utility for Tailwind v4 compatibility */
+@utility text-display-xl {
+  font-size: var(--font-size-display-xl);
+  line-height: var(--line-height-display-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-display-xl);
+}
+
+@utility text-display-lg {
+  font-size: var(--font-size-display-lg);
+  line-height: var(--line-height-display-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-display-lg);
+}
+
+@utility text-display-md {
+  font-size: var(--font-size-display-md);
+  line-height: var(--line-height-display-md);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-display-md);
+}
+
+@utility text-display-sm {
+  font-size: var(--font-size-display-sm);
+  line-height: var(--line-height-display-sm);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-display-sm);
+}
+
+@utility text-headline-lg {
+  font-size: var(--font-size-headline-lg);
+  line-height: var(--line-height-headline-lg);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-headline-lg);
+}
+
+@utility text-headline-md {
+  font-size: var(--font-size-headline-md);
+  line-height: var(--line-height-headline-md);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-headline-md);
+}
+
+@utility text-headline-sm {
+  font-size: var(--font-size-headline-sm);
+  line-height: var(--line-height-headline-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-headline-sm);
+}
+
+@utility text-title-lg {
+  font-size: var(--font-size-title-lg);
+  line-height: var(--line-height-title-lg);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-title-lg);
+}
+
+@utility text-title-md {
+  font-size: var(--font-size-title-md);
+  line-height: var(--line-height-title-md);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-title-md);
+}
+
+@utility text-title-sm {
+  font-size: var(--font-size-title-sm);
+  line-height: var(--line-height-title-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-title-sm);
+}
+
+@utility text-body-lg {
+  font-size: var(--font-size-body-lg);
+  line-height: var(--line-height-body-lg);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-body-lg);
+}
+
+@utility text-body-md {
+  font-size: var(--font-size-body-md);
+  line-height: var(--line-height-body-md);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-body-md);
+}
+
+@utility text-body-sm {
+  font-size: var(--font-size-body-sm);
+  line-height: var(--line-height-body-sm);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: var(--letter-spacing-body-sm);
+}
+
+@utility text-label-lg {
+  font-size: var(--font-size-label-lg);
+  line-height: var(--line-height-label-lg);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label-lg);
+}
+
+@utility text-label-md {
+  font-size: var(--font-size-label-md);
+  line-height: var(--line-height-label-md);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label-md);
+}
+
+@utility text-label-sm {
+  font-size: var(--font-size-label-sm);
+  line-height: var(--line-height-label-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label-sm);
+}
+
+/* Luxury Card Component - Using @utility for Tailwind v4 compatibility */
+@utility luxury-card {
+  @apply bg-surface-container-lowest border border-outline-variant/50 rounded-2xl shadow-luxury transition-all duration-300;
+}
+
+@utility luxury-card-hover {
+  @apply shadow-luxury-lg border-primary/20;
+}
+
+@utility luxury-card-elevated {
+  @apply bg-surface-container-lowest rounded-xl shadow-luxury transition-all duration-300;
+}
+
+@utility luxury-card-filled {
+  @apply bg-surface-container-low rounded-2xl border border-outline-variant/30 transition-all duration-300;
+}
+
+@utility luxury-card-filled-hover {
+  @apply border-primary/30 shadow-md;
+}
+
+/* Luxury Button Variants */
+@utility btn-luxury-primary {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-label-lg font-semibold rounded-xl
+         bg-primary text-on-primary shadow-luxury
+         hover:shadow-luxury-lg hover:bg-primary-hover
+         active:scale-[0.98] transition-all duration-200
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-luxury;
+}
+
+@utility btn-luxury-secondary {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-label-lg font-semibold rounded-xl
+         bg-secondary-container text-on-secondary-container
+         hover:bg-secondary-container/80 hover:shadow-md
+         active:scale-[0.98] transition-all duration-200
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-luxury-outline {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-label-lg font-semibold rounded-xl
+         border-2 border-primary text-primary bg-transparent
+         hover:bg-primary-light hover:shadow-md
+         active:scale-[0.98] transition-all duration-200
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-luxury-ghost {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-label-md font-medium rounded-lg
+         text-on-surface-variant bg-transparent
+         hover:bg-surface-container hover:text-on-surface
+         active:scale-[0.98] transition-all duration-200
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-luxury-danger {
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-label-lg font-semibold rounded-xl
+         bg-error text-on-error shadow-luxury
+         hover:shadow-luxury-lg hover:bg-error/90
+         active:scale-[0.98] transition-all duration-200
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error focus-visible:ring-offset-2
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-luxury-icon {
+  @apply inline-flex items-center justify-center p-2 text-on-surface-variant bg-transparent rounded-xl
+         hover:bg-surface-container hover:text-on-surface
+         active:scale-[0.95] transition-all duration-200
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+@utility btn-luxury-icon-lg {
+  @apply inline-flex items-center justify-center p-3 text-on-surface-variant bg-transparent rounded-xl
+         hover:bg-surface-container hover:text-on-surface
+         active:scale-[0.95] transition-all duration-200
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Luxury Input */
+@utility input-luxury {
+  @apply w-full px-4 py-3.5 text-body-md bg-surface-container-lowest border border-outline-variant/50 rounded-xl
+         placeholder:text-on-surface-variant/40
+         transition-all duration-200
+         hover:border-outline-variant
+         focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+         disabled:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility input-luxury-with-icon {
+  @apply pl-12;
+}
+
+@utility input-luxury-label {
+  @apply block text-label-md text-on-surface-variant mb-2 font-medium;
+}
+
+@utility input-luxury-error {
+  @apply border-error focus:ring-error/20 focus:border-error;
+}
+
+@utility input-luxury-helper {
+  @apply mt-1.5 text-label-sm text-on-surface-variant;
+}
+
+@utility input-luxury-error-text {
+  @apply mt-1.5 text-label-sm text-error;
+}
+
+/* Luxury Badge */
+@utility badge-luxury {
+  @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-sm font-medium transition-colors;
+}
+
+@utility badge-luxury-primary {
+  @apply bg-primary-light text-primary border border-primary/20;
+}
+
+@utility badge-luxury-secondary {
+  @apply bg-secondary-light text-secondary border border-secondary/20;
+}
+
+@utility badge-luxury-tertiary {
+  @apply bg-tertiary-light text-tertiary border border-tertiary/20;
+}
+
+@utility badge-luxury-success {
+  @apply bg-success-light text-success border border-success/20;
+}
+
+@utility badge-luxury-warning {
+  @apply bg-warning-light text-warning border border-warning/20;
+}
+
+@utility badge-luxury-error {
+  @apply bg-error-light text-error border border-error/20;
+}
+
+@utility badge-luxury-neutral {
+  @apply bg-surface-container-high text-on-surface-variant border border-outline-variant/50;
+}
+
+@utility badge-luxury-outline {
+  @apply bg-transparent border-2 text-on-surface-variant;
+}
+
+/* Luxury Avatar */
+@utility avatar-luxury {
+  @apply inline-flex items-center justify-center bg-primary-light text-primary font-semibold rounded-full overflow-hidden;
+}
+
+@utility avatar-luxury-sm { @apply w-8 h-8 text-label-sm; }
+@utility avatar-luxury-md { @apply w-10 h-10 text-label-md; }
+@utility avatar-luxury-lg { @apply w-12 h-12 text-body-md; }
+@utility avatar-luxury-xl { @apply w-16 h-16 text-headline-sm; }
+
+/* Luxury Divider */
+@utility divider-luxury {
+  @apply h-px bg-outline-variant/50 border-0;
+}
+
+@utility divider-luxury-vertical {
+  @apply w-px h-full bg-outline-variant/50 border-0;
+}
+
+/* Luxury Tooltip */
+@utility tooltip-luxury {
+  @apply absolute z-[var(--z-tooltip)] px-3 py-2 text-label-sm text-on-surface bg-inverse-surface rounded-lg shadow-luxury-lg
+         opacity-0 invisible transition-all duration-200 pointer-events-none;
+}
+
+@utility tooltip-luxury-show {
+  @apply opacity-100 visible;
+}
+
+/* Luxury Dropdown */
+@utility dropdown-luxury {
+  @apply absolute z-[var(--z-dropdown)] min-w-[200px] bg-surface-container-lowest border border-outline-variant/50 rounded-2xl shadow-luxury-lg
+         overflow-hidden animate-fade-in-up;
+}
+
+@utility dropdown-luxury-item {
+  @apply flex items-center gap-3 px-4 py-3 text-body-md text-on-surface-variant
+         hover:bg-surface-container hover:text-on-surface transition-colors duration-150;
+}
+
+@utility dropdown-luxury-divider {
+  @apply h-px bg-outline-variant/50 my-1;
+}
+
+/* Luxury Table */
+@utility table-luxury {
+  @apply w-full border-collapse text-body-sm;
+}
+
+@utility table-luxury-th {
+  @apply px-6 py-4 text-left text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider
+         bg-surface-container-low border-b border-outline-variant/50;
+}
+
+@utility table-luxury-td {
+  @apply px-6 py-4 text-on-surface border-b border-outline-variant/30;
+}
+
+@utility table-luxury-tr {
+  @apply transition-colors duration-150 hover:bg-surface-container-low/50;
+}
+
+@utility table-luxury-tr-last {
+  @apply border-b-0;
+}
+
+/* Luxury Tabs */
+@utility tabs-luxury {
+  @apply flex gap-1 bg-surface-container-low rounded-xl p-1;
+}
+
+@utility tabs-luxury-trigger {
+  @apply flex items-center gap-2 px-4 py-2.5 text-label-md font-medium text-on-surface-variant rounded-lg
+         transition-all duration-200
+         hover:text-on-surface hover:bg-surface-container-lowest
+         data-[state=active]:bg-surface-container-lowest data-[state=active]:text-primary data-[state=active]:shadow-md;
+}
+
+/* Luxury Accordion */
+@utility accordion-luxury {
+  @apply border border-outline-variant/50 rounded-2xl overflow-hidden bg-surface-container-lowest;
+}
+
+@utility accordion-luxury-item {
+  @apply border-b border-outline-variant/50 last:border-b-0;
+}
+
+@utility accordion-luxury-trigger {
+  @apply w-full flex items-center justify-between px-6 py-4 text-body-md font-medium text-on-surface
+         bg-transparent border-0 text-left
+         hover:bg-surface-container-low transition-colors duration-150
+         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset;
+}
+
+@utility accordion-luxury-content {
+  @apply px-6 pb-4 text-body-md text-on-surface-variant animate-accordion-down;
+}
+
+/* Luxury Modal */
+@utility modal-luxury-overlay {
+  @apply fixed inset-0 z-[var(--z-modal-backdrop)] bg-black/30 backdrop-blur-sm animate-fade-in;
+}
+
+@utility modal-luxury-content {
+  @apply fixed z-[var(--z-modal)] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+         bg-surface-container-lowest rounded-3xl shadow-luxury-lg border border-outline-variant/50
+         max-h-[90vh] max-w-[90vw] w-full animate-fade-in-up;
+}
+
+/* Luxury Toast */
+@utility toast-luxury {
+  @apply fixed bottom-6 right-6 z-[var(--z-tooltip)] flex items-center gap-3 px-5 py-4
+         bg-inverse-surface text-inverse-on-surface rounded-2xl shadow-luxury-lg
+         animate-slide-up-fade-in;
+}
+
+@utility toast-luxury-success {
+  @apply bg-success text-on-success;
+}
+
+@utility toast-luxury-error {
+  @apply bg-error text-on-error;
+}
+
+@utility toast-luxury-warning {
+  @apply bg-warning text-on-warning;
+}
+
+@utility toast-luxury-info {
+  @apply bg-primary text-on-primary;
+}
+
+/* Luxury Skeleton */
+@utility skeleton-luxury {
+  @apply bg-surface-container-high animate-pulse rounded-xl;
+}
+
+/* Luxury Page Container */
+@utility page-luxury {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+}
+
+@utility page-luxury-header {
+  @apply mb-8;
+}
+
+@utility page-luxury-title {
+  @apply text-display-sm text-on-surface font-bold tracking-tight;
+}
+
+@utility page-luxury-subtitle {
+  @apply mt-2 text-body-md text-on-surface-variant;
+}
+
+/* Luxury Section */
+@utility section-luxury {
+  @apply space-y-6;
+}
+
+@utility section-luxury-title {
+  @apply text-headline-md text-on-surface font-semibold;
+}
+
+@utility section-luxury-subtitle {
+  @apply text-body-md text-on-surface-variant mt-1;
+}
+
+/* Luxury Grid */
+@utility grid-luxury {
+  @apply grid gap-6;
+}
+
+@utility grid-luxury-2 { @apply grid-cols-1 sm:grid-cols-2; }
+@utility grid-luxury-3 { @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3; }
+@utility grid-luxury-4 { @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-4; }
+
+/* Luxury Stats Card */
+@utility stat-luxury {
+  @apply luxury-card p-6;
+}
+
+@utility stat-luxury-icon {
+  @apply w-12 h-12 rounded-xl flex items-center justify-center mb-4;
+}
+
+@utility stat-luxury-value {
+  @apply text-display-md text-on-surface font-bold;
+}
+
+@utility stat-luxury-label {
+  @apply text-label-md text-on-surface-variant mt-1;
+}
+
+@utility stat-luxury-trend {
+  @apply flex items-center gap-1 text-label-sm font-medium mt-3;
+}
+
+@utility stat-luxury-trend-positive {
+  @apply text-success;
+}
+
+@utility stat-luxury-trend-negative {
+  @apply text-error;
+}
+
+/* Luxury Empty State */
+@utility empty-luxury {
+  @apply flex flex-col items-center justify-center py-16 px-6 text-center;
+}
+
+@utility empty-luxury-icon {
+  @apply w-16 h-16 text-on-surface-variant/30 mb-4;
+}
+
+@utility empty-luxury-title {
+  @apply text-headline-sm text-on-surface font-semibold;
+}
+
+@utility empty-luxury-description {
+  @apply text-body-md text-on-surface-variant mt-2 max-w-sm;
+}
+
+@utility empty-luxury-action {
+  @apply mt-6;
+}
+
+/* Luxury Loading */
+@utility loading-luxury {
+  @apply flex items-center justify-center py-12;
+}
+
+@utility loading-luxury-spinner {
+  @apply w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin;
+}
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up-fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+@keyframes slot-select {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(124, 58, 237, 0.4); }
+  100% { transform: scale(1); }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
 @layer utilities {
-  .text-headline-md {
-    font-size: var(--font-size-headline-md);
-    line-height: var(--line-height-headline-md);
-    font-weight: var(--font-weight-headline-md);
-    font-family: var(--font-family-headline-md);
+  /* Text Gradient */
+  .text-gradient-luxury {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
   }
 
-  .text-label-sm {
-    font-size: var(--font-size-label-sm);
-    line-height: var(--line-height-label-sm);
-    font-weight: var(--font-weight-label-sm);
-    font-family: var(--font-family-label-sm);
-    letter-spacing: var(--letter-spacing-label-sm);
+  .text-gradient-tertiary {
+    @apply bg-gradient-to-r from-tertiary to-secondary bg-clip-text text-transparent;
   }
 
-  .text-body-md {
-    font-size: var(--font-size-body-md);
-    line-height: var(--line-height-body-md);
-    font-weight: var(--font-weight-body-md);
-    font-family: var(--font-family-body-md);
+  /* Glass Effect */
+  .glass-luxury {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20;
   }
 
-  .text-headline-lg {
-    font-size: var(--font-size-headline-lg);
-    line-height: var(--line-height-headline-lg);
-    font-weight: var(--font-weight-headline-lg);
-    font-family: var(--font-family-headline-lg);
-    letter-spacing: var(--letter-spacing-headline-lg);
+  .glass-luxury-dark {
+    @apply bg-inverse-surface/70 backdrop-blur-xl border border-inverse-surface/20;
   }
 
-  .text-display-lg {
-    font-size: var(--font-size-display-lg);
-    line-height: var(--line-height-display-lg);
-    font-weight: var(--font-weight-display-lg);
-    font-family: var(--font-family-display-lg);
-    letter-spacing: var(--letter-spacing-display-lg);
+  /* Gradient Borders */
+  .border-gradient-luxury {
+    @apply relative before:absolute before:inset-0 before:rounded-[inherit] before:bg-gradient-to-r before:from-primary before:to-secondary before:-z-10;
   }
 
-  .text-body-lg {
-    font-size: var(--font-size-body-lg);
-    line-height: var(--line-height-body-lg);
-    font-weight: var(--font-weight-body-lg);
-    font-family: var(--font-family-body-lg);
+  /* Focus Ring */
+  .focus-ring-luxury {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface;
   }
 
-  .text-headline-lg-mobile {
-    font-size: var(--font-size-headline-lg-mobile);
-    line-height: var(--line-height-headline-lg-mobile);
-    font-weight: var(--font-weight-headline-lg-mobile);
-    font-family: var(--font-family-headline-lg-mobile);
-  }
+  /* Truncate */
+  .truncate-1 { @apply truncate; }
+  .truncate-2 { @apply overflow-hidden text-ellipsis whitespace-nowrap; }
+  .truncate-3 { @apply overflow-hidden text-ellipsis; }
 
-  .text-label-md {
-    font-size: var(--font-size-label-md);
-    line-height: var(--line-height-label-md);
-    font-weight: var(--font-weight-label-md);
-    font-family: var(--font-family-label-md);
-    letter-spacing: var(--letter-spacing-label-md);
+  /* Container */
+  .container-luxury {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
+}
 
-  .font-headline-md {
-    font-family: var(--font-family-headline-md);
-    font-weight: var(--font-weight-headline-md);
-  }
+/* Animation Utilities - Using @utility at top level for Tailwind v4 compatibility */
+@utility animate-fade-in {
+  animation: fade-in var(--transition-normal) ease-out;
+}
 
-  .font-label-md {
-    font-family: var(--font-family-label-md);
-    font-weight: var(--font-weight-label-md);
-  }
+@utility animate-fade-in-up {
+  animation: fade-in-up var(--transition-normal) ease-out;
+}
 
-  .font-label-sm {
-    font-family: var(--font-family-label-sm);
-    font-weight: var(--font-weight-label-sm);
-  }
+@utility animate-slide-up-fade-in {
+  animation: slide-up-fade-in var(--transition-slow) ease-out;
+}
 
-  .font-body-md {
-    font-family: var(--font-family-body-md);
-    font-weight: var(--font-weight-body-md);
-  }
+@utility animate-accordion-down {
+  animation: accordion-down var(--transition-normal) ease-out;
+}
 
-  .font-headline-lg {
-    font-family: var(--font-family-headline-lg);
-    font-weight: var(--font-weight-headline-lg);
-  }
-
-  .font-display-lg {
-    font-family: var(--font-family-display-lg);
-    font-weight: var(--font-weight-display-lg);
-  }
-
-  .font-body-lg {
-    font-family: var(--font-family-body-lg);
-    font-weight: var(--font-weight-body-lg);
-  }
-
-  /* Parking grid pattern */
-  .parking-grid {
-    background-image: radial-gradient(var(--color-outline-variant) 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
-
-  .car-shadow {
-    filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06));
-  }
-
-  .selected-glow {
-    box-shadow: 0 0 20px 2px rgba(76, 29, 149, 0.3);
-  }
-
-  /* Hide scrollbar but keep functionality */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  /* Safe area insets for mobile */
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+@utility animate-accordion-up {
+  animation: accordion-up var(--transition-normal) ease-out;
 }

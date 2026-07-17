@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
+import { Layout } from './components/Layout';
 import Dashboard from './pages/Dashboard/DashBoard';
 import SlotMap from './pages/SlotMap/SlotMap';
 import Checkout from './pages/Checkout/Checkout';
