@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   MapPin,
@@ -11,69 +12,9 @@ import {
   Navigation,
   Zap,
   Expand,
+  ArrowRight,
 } from "lucide-react";
-
-// --- MOCK DATA ---
-export const parkingLocations = [
-  {
-    id: "loc_001",
-    name: "Metropolitan Square",
-    address: "142 Industrial Blvd, Zone A",
-    image:"https://images.crunchbase.com/image/upload/c_pad,h_256,w_256,f_auto,q_auto:eco,dpr_1/py3k8t1ffgyhnveafakn?ik-sanitizeSvg=true",
-    pricePerHour: 4.5,
-    availableSlots: 12,
-    totalSlots: 50,
-    features: ["EV Charging", "24/7 Access", "Security"],
-    coordinates: { lat: 37.7749, lng: -122.4194 },
-    rating: 4.5,
-    totalReviews: 234,
-    floors: 5,
-    hasEVCharging: true,
-    hasValet: false,
-    isOpen24h: true,
-  },
-];
-
-export const floorPlans = {
-  loc_001: {
-    floors: [
-      {
-        id: "floor_1",
-        name: "1st Floor",
-        sections: ["A", "B", "C", "D"],
-        slots: [
-          { id: "A-1", section: "A", status: "available", type: "standard" },
-          { id: "A-2", section: "A", status: "available", type: "standard" },
-          { id: "A-3", section: "A", status: "available", type: "standard" },
-          { id: "A-4", section: "A", status: "occupied", type: "standard" },
-          { id: "B-1", section: "B", status: "available", type: "standard" },
-          { id: "B-2", section: "B", status: "available", type: "standard" },
-          { id: "B-3", section: "B", status: "occupied", type: "standard" },
-          { id: "B-4", section: "B", status: "occupied", type: "standard" },
-          { id: "C-1", section: "C", status: "available", type: "compact" },
-          { id: "C-2", section: "C", status: "occupied", type: "compact" },
-          { id: "D-1", section: "D", status: "available", type: "oversize" },
-          { id: "D-2", section: "D", status: "available", type: "oversize" },
-        ],
-      },
-      {
-        id: "floor_2",
-        name: "2nd Floor",
-        sections: ["A", "B", "C", "D"],
-        slots: [
-          { id: "A-101", section: "A", status: "available", type: "ev" },
-          { id: "A-102", section: "A", status: "available", type: "ev" },
-          { id: "A-103", section: "A", status: "occupied", type: "ev" },
-          { id: "A-104", section: "A", status: "available", type: "ev" },
-          { id: "B-101", section: "B", status: "available", type: "standard" },
-          { id: "B-102", section: "B", status: "occupied", type: "standard" },
-          { id: "B-103", section: "B", status: "available", type: "standard" },
-          { id: "B-104", section: "B", status: "available", type: "standard" },
-        ],
-      },
-    ],
-  },
-};
+import { parkingLocations, floorPlans } from "../../data/mockData";
 
 // --- COMPONENTS ---
 
@@ -314,9 +255,12 @@ const Legend = () => {
 };
 
 export default function SlotMapWebPanel() {
-  const locationId = "loc_001";
-  const location = parkingLocations.find((l) => l.id === locationId);
-  const floorData = floorPlans[locationId];
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
+  const locationId = searchParams.get("location") || "loc_001";
+  const location = parkingLocations.find((l) => l.id === locationId) || parkingLocations[0];
+  const floorData = floorPlans[locationId] || floorPlans[parkingLocations[0].id];
 
   const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -347,6 +291,12 @@ export default function SlotMapWebPanel() {
   const handleFloorChange = (index) => {
     setSelectedFloorIndex(index);
     setSelectedSlot(null);
+  };
+
+  const handleProceedToCheckout = () => {
+    if (selectedSlot) {
+      navigate(`/checkout?location=${locationId}&slot=${selectedSlot.id}&floor=${currentFloor.name}&type=${selectedSlot.type}&rate=${location.pricePerHour}`);
+    }
   };
 
   // Calculate stats
@@ -468,13 +418,13 @@ export default function SlotMapWebPanel() {
       </div>
 
       {/* RIGHT CONTENT: Booking Sidebar - COMPACT */}
-      <div className="w-[360px] h-full bg-white flex flex-col z-10 relative hidden lg:flex">
+      <div className="w-[360px] h-full bg-white flex flex-col shadow-[-12px_0_24px_rgba(0,0,0,0.03)] z-10 relative hidden lg:flex">
         {/* Sidebar Image Cover - REDUCED HEIGHT */}
-        <div className="h-35 w-full  overflow-hidden">
+        <div className="h-48 w-full relative overflow-hidden">
           <img
             src={location.image}
             alt={location.name}
-            className="-w-0px h-full object-cover transition-all duration-700 ease-out hover:scale-105"
+            className="w-10px h-full object-cover transition-all duration-700 ease-out hover:scale-105"
           />
           <div className="absolute inset-0  to-transparent" />
           {/* Floor indicator badge on image */}
@@ -595,6 +545,7 @@ export default function SlotMapWebPanel() {
           <div className="pt-2 border-t absolute bottom-30 left-10 right-0 border-gray-100">
             <button
               disabled={!selectedSlot}
+              onClick={handleProceedToCheckout}
               className={`w-full py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
                 selectedSlot
                   ? "bg-gray-900 text-white hover:bg-black hover:shadow-lg hover:shadow-gray-900/20 active:scale-[0.98]"

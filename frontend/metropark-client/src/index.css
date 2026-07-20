@@ -23,6 +23,15 @@
   --color-on-tertiary: #FFFFFF;
   --color-on-tertiary-container: #4A1A6B;
 
+  /* Light Violet - Luxury Accent Color */
+  --color-violet: #A855F7;
+  --color-violet-hover: #9333EA;
+  --color-violet-light: #F5F0FF;
+  --color-violet-container: #EDE9FE;
+  --color-violet-muted: #D8B4FE;
+  --color-on-violet: #FFFFFF;
+  --color-on-violet-container: #4C1D95;
+
   --color-success: #2E7D32;
   --color-success-light: #E8F5E9;
   --color-success-container: #C8E6C9;
@@ -777,6 +786,12 @@
   100% { transform: scale(1); }
 }
 
+@keyframes scale-in {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -848,4 +863,8 @@
 
 @utility animate-accordion-up {
   animation: accordion-up var(--transition-normal) ease-out;
+}
+
+@utility animate-scale-in {
+  animation: scale-in var(--transition-normal) ease-out;
 }

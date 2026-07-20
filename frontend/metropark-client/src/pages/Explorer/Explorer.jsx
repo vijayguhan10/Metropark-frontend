@@ -438,7 +438,7 @@ function LocationCard({
           )}
         </div>
         <Link
-          to={`/checkout?location=${location.id}`}
+          to={`/map?location=${location.id}`}
           className="btn-luxury-outline w-full mt-auto justify-center"
         >
           <Navigation className="w-4 h-4" />

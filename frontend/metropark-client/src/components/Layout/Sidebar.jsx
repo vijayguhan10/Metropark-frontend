@@ -18,7 +18,6 @@ import { user } from '../../data/mockData';
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Explorer', href: '/explorer', icon: Compass },
-  { name: 'Map View', href: '/map', icon: Map },
   { name: 'Reservations', href: '/reservations', icon: Calendar },
   { name: 'History', href: '/history', icon: History },
 ];
