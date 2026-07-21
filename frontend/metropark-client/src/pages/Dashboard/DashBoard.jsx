@@ -183,7 +183,7 @@ export default function Dashboard() {
       </div>
 
       {/* Featured Locations */}
-      <div>
+      {/* <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h2 className="text-headline-md font-semibold text-on-surface">Explore Nearby</h2>
@@ -267,10 +267,10 @@ export default function Dashboard() {
             </article>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Map Teaser Section */}
-      <div className="luxury-card-elevated relative overflow-hidden h-72">
+      {/* <div className="luxury-card-elevated relative overflow-hidden h-72">
         <div className="absolute inset-0 bg-cover bg-center" style={{
           backgroundImage: 'url(https://lh3.googleusercontent.com/aida-public/AB6AXuBwNCXeNyx1wPyPVt4ThA-UQ4egfG9j5NM-1fKBeLm6TLVHPev8R0vFgstBqvJCf7EyM2vzA-G8haZkjyHPeDpecGS9h7SSQGV7vNDax1o-oQAdCDbuZvdQdxgphl9evQHNT5elPvGnkCqIn6P_0ftjH1AhJzrkNY_BopA2-VWXiPMQzN49gzGf1Bk5FcLnbYgIECQ-_eT4DX2mMTFrXZSFRr2HW8ij4J7jPTvpCUO9Nluhd2El3fFosdqxGxQ_NSvB_lx76TSOm8AE)'
         }} />
@@ -286,7 +286,7 @@ export default function Dashboard() {
             Open Map View
           </Link>
         </div>
-      </div>
+      </div> */}
 
       {/* Floating Action Button */}
       <div className="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 z-40 lg:hidden">
