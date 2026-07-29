@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { apiService } from "../services/api";
 
 const AdminDataContext = createContext(null);
 const ADMIN_DATA_STORAGE_KEY = "metropark-admin-simulation-data";
 const defaultAdminData = {
+  locationTypes: [],
   locations: [],
   gates: [],
   vehicleTypes: [],
@@ -10,6 +12,8 @@ const defaultAdminData = {
   billingTypes: [],
   pricingRates: [],
   paymentMethods: [],
+  eventMetadata: [],
+  parkingSlots: [],
 };
 
 export function AdminDataProvider({ children }) {
@@ -26,6 +30,18 @@ export function AdminDataProvider({ children }) {
     }
   });
 
+  // Track posted status for each module
+  const [postedModules, setPostedModules] = useState({});
+
+  // Master data fetched from backend
+  const [masterData, setMasterData] = useState({
+    locations: [],
+    vehicleTypes: [],
+    reservationClasses: [],
+  });
+  const [masterDataLoading, setMasterDataLoading] = useState(true);
+  const [masterDataError, setMasterDataError] = useState(null);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -33,6 +49,35 @@ export function AdminDataProvider({ children }) {
 
     window.localStorage.setItem(ADMIN_DATA_STORAGE_KEY, JSON.stringify(adminData));
   }, [adminData]);
+
+  // Fetch master data from backend
+  const fetchMasterData = useCallback(async () => {
+    setMasterDataLoading(true);
+    setMasterDataError(null);
+    try {
+      const [locationsRes, vehicleTypesRes, reservationClassesRes] = await Promise.all([
+        apiService.locations.getAll(),
+        apiService.vehicleTypes.getAll(),
+        apiService.reservationClasses.getAll(),
+      ]);
+
+      setMasterData({
+        locations: locationsRes.data || [],
+        vehicleTypes: vehicleTypesRes.data || [],
+        reservationClasses: reservationClassesRes.data || [],
+      });
+    } catch (error) {
+      console.error("Failed to fetch master data:", error);
+      setMasterDataError(error.message || "Failed to fetch master data");
+    } finally {
+      setMasterDataLoading(false);
+    }
+  }, []);
+
+  // Fetch master data on initialization
+  useEffect(() => {
+    fetchMasterData();
+  }, [fetchMasterData]);
 
   const updateAdminData = useCallback((module, data) => {
     setAdminData((prev) => ({
@@ -57,6 +102,15 @@ export function AdminDataProvider({ children }) {
 
   const clearAllAdminData = useCallback(() => {
     setAdminData(defaultAdminData);
+    setPostedModules({});
+  }, []);
+
+  const setModulePosted = useCallback((module, posted) => {
+    setPostedModules((prev) => ({ ...prev, [module]: posted }));
+  }, []);
+
+  const clearPostedStatus = useCallback(() => {
+    setPostedModules({});
   }, []);
 
   const value = {
@@ -65,6 +119,13 @@ export function AdminDataProvider({ children }) {
     replaceAdminData,
     clearAdminData,
     clearAllAdminData,
+    postedModules,
+    setModulePosted,
+    clearPostedStatus,
+    masterData,
+    masterDataLoading,
+    masterDataError,
+    fetchMasterData,
   };
 
   return (

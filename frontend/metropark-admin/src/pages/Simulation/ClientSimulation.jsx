@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { useAdminData } from "../../context/AdminDataContext";
 import {
@@ -42,7 +42,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const InputField = ({
+const InputField = React.memo(({ 
   label,
   value,
   onChange,
@@ -64,13 +64,14 @@ const InputField = ({
       className="w-full rounded-xl border border-slate-200 bg-white/50 px-4 py-2.5 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 disabled:bg-slate-50 disabled:text-slate-500 focus:bg-white focus:ring-2 focus:ring-(--app-violet)/20 focus:border-(--app-violet) shadow-sm"
     />
   </label>
-);
+));
 
 const DataViewer = ({ data, isExpanded, onToggle }) => {
   if (!data || data.length === 0) return null;
   return (
     <div className="mt-6 pt-5 border-t border-slate-100">
       <button
+        type="button"
         onClick={onToggle}
         className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
       >
@@ -327,6 +328,7 @@ export function ClientSimulation() {
 
       <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <button
+          type="button"
           onClick={onGenerate}
           disabled={generating[dataKey] || disabled}
           className="w-full sm:w-auto flex justify-center items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 shadow-sm"
@@ -340,6 +342,7 @@ export function ClientSimulation() {
         </button>
 
         <button
+          type="button"
           onClick={() => postModule(dataKey)}
           disabled={
             !isDataPresent(dataKey) || posting[dataKey] || posted[dataKey]
@@ -402,6 +405,7 @@ export function ClientSimulation() {
         </div>
         <div className="flex flex-wrap sm:flex-nowrap gap-2">
           <button
+            type="button"
             onClick={generateAllClient}
             disabled={generating.all || !hasAdminData}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-6 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition disabled:opacity-50"
@@ -414,6 +418,7 @@ export function ClientSimulation() {
             Build Pipeline
           </button>
           <button
+            type="button"
             onClick={pushAllClient}
             disabled={
               posting.all ||
@@ -429,6 +434,7 @@ export function ClientSimulation() {
             Push All to DB
           </button>
           <button
+            type="button"
             onClick={resetAll}
             className="flex-none p-3 rounded-2xl border border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition"
             title="Reset Everything"
