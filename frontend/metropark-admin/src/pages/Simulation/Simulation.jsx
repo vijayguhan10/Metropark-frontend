@@ -1,4 +1,3 @@
-import { ClientSimulation } from "./ClientSimulation";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { AdminDataProvider } from "../../context/AdminDataContext";
 import { Users, Zap, Database, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
@@ -12,7 +11,6 @@ export function SimulationPage() {
           title="Client Data Simulator"
           description="Generate realistic client-side data: users, vehicles, parking sessions, payments, and reservations. Depends on admin infrastructure data."
         />
-        <ClientSimulation />
       </section>
     </AdminDataProvider>
   );

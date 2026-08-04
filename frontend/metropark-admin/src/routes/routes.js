@@ -30,12 +30,8 @@ export const routes = [
     icon: Database,
     component: AdminSimulationPage,
   },
-  {
-    path: "/simulation/client",
-    label: "Client Data Simulator",
-    icon: Users,
-    component: SimulationPage,
-  },
+  
+ 
 ];
 
 export const routeMap = Object.fromEntries(
