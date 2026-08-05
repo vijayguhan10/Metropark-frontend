@@ -1,146 +1,247 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Filter,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Receipt,
-  User,
-  MapPin,
-  Dock,
-  Compass,
+  Clock,
   CheckCircle,
   XCircle,
   AlertCircle,
-  Clock,
   Car,
-} from 'lucide-react';
-import { reservations, user } from '../../data/mockData';
+  MapPin,
+  RefreshCw,
+  DollarSign,
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { parkingSessionsApi } from "../../api";
+import { reservations as mockReservations } from "../../data/mockData";
 
-const statusConfig = {
-  active: { variant: 'success', label: 'ACTIVE', icon: AlertCircle, color: 'text-warning' },
-  exited: { variant: 'default', label: 'EXITED', icon: CheckCircle, color: 'text-success' },
-  cancelled: { variant: 'error', label: 'CANCELLED', icon: XCircle, color: 'text-error' },
+const STATUS_CONFIG = {
+  CREATED: {
+    label: "Created",
+    color: "text-blue-400 bg-blue-400/10 border-blue-400/30",
+    Icon: Clock,
+  },
+  ACTIVE: {
+    label: "Active",
+    color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+    Icon: CheckCircle,
+  },
+  EXITED: {
+    label: "Completed",
+    color: "text-slate-400 bg-white-400/10 border-slate-400/30",
+    Icon: CheckCircle,
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    color: "text-red-400 bg-red-400/10 border-red-400/30",
+    Icon: XCircle,
+  },
+  active: {
+    label: "Active",
+    color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+    Icon: CheckCircle,
+  },
+  exited: {
+    label: "Completed",
+    color: "text-slate-400 bg-white-400/10 border-slate-400/30",
+    Icon: CheckCircle,
+  },
+  cancelled: {
+    label: "Cancelled",
+    color: "text-red-400 bg-red-400/10 border-red-400/30",
+    Icon: XCircle,
+  },
 };
 
-export default function History() {
-  const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
-  const formatDate = (dateString) => new Date(dateString).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-  const formatTime = (dateString) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+function formatTs(ts) {
+  if (!ts) return "—";
+  try {
+    return new Date(ts).toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  } catch {
+    return ts;
+  }
+}
+
+function calcDuration(entry, exit) {
+  if (!entry || !exit) return "—";
+  try {
+    const mins = Math.round((new Date(exit) - new Date(entry)) / 60000);
+    if (mins < 60) return `${mins}m`;
+    return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+  } catch {
+    return "—";
+  }
+}
+
+function StatusBadge({ status }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.EXITED;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.color}`}
+    >
+      <cfg.Icon className="w-3 h-3" />
+      {cfg.label}
+    </span>
+  );
+}
+
+function SessionRow({ item }) {
+  const id = item.session_id ?? item.sessionId ?? item.id;
+  const slot = item.slot_id ?? item.slotId ?? item.slotNumber ?? "—";
+  const location = item.locationName || item.location_name || `Slot ${slot}`;
+  const status = (
+    item.session_status ||
+    item.sessionStatus ||
+    item.status ||
+    "EXITED"
+  ).toUpperCase();
+  const entry =
+    item.actual_entry_time || item.actualEntryTime || item.entryTime;
+  const exit = item.actual_exit_time || item.actualExitTime || item.exitTime;
+  const mins = item.duration_minutes ?? item.durationMinutes;
+  const duration = mins
+    ? `${Math.floor(mins / 60)}h ${mins % 60}m`
+    : calcDuration(entry, exit);
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Page Header */}
-      <div className="page-luxury-header">
-        <h1 className="page-luxury-title">Reservations & History</h1>
-        <p className="page-luxury-subtitle">Manage your current parking sessions and review past transactions.</p>
-      </div>
-
-      {/* Filters & Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="flex gap-2 flex-wrap">
-          <button className="btn-luxury-ghost">
-            <Filter className="w-4 h-4" />
-            All Sessions
-          </button>
-          <button className="btn-luxury-outline">Active Only</button>
+    <tr className="border-b border-slate-800/60 hover:bg-white-800/30 transition-colors">
+      <td className="px-4 py-4 text-sm font-mono text-slate-400">
+        #{String(id).padStart(4, "0")}
+      </td>
+      <td className="px-4 py-4">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+          <span className="text-sm text-white font-medium">{location}</span>
         </div>
-        <Link to="/explorer" className="btn-luxury-secondary">
-          <Plus className="w-4 h-4" />
-          Book New Slot
-        </Link>
-      </div>
+        {slot !== "—" && (
+          <p className="text-xs text-slate-500 mt-0.5 pl-5">Slot {slot}</p>
+        )}
+      </td>
+      <td className="px-4 py-4 text-sm text-slate-300">{formatTs(entry)}</td>
+      <td className="px-4 py-4 text-sm text-slate-300">{formatTs(exit)}</td>
+      <td className="px-4 py-4 text-sm text-slate-300">{duration}</td>
+      <td className="px-4 py-4">
+        <StatusBadge status={status} />
+      </td>
+    </tr>
+  );
+}
 
-      {/* Sessions Table */}
-      <div className="luxury-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table-luxury">
-            <thead>
-              <tr>
-                <th className="px-6 py-4">Location & Slot</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Entry Time</th>
-                <th className="px-6 py-4">Exit Time</th>
-                <th className="px-6 py-4 text-right">Amount</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/50">
-              {reservations.map((reservation) => {
-                const config = statusConfig[reservation.status] || statusConfig.exited;
-                const isActive = reservation.status === 'active';
-                const isCancelled = reservation.status === 'cancelled';
-                const Icon = config.icon;
+export default function History() {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+  const [sessions, setSessions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-                return (
-                  <tr key={reservation.id} className={`transition-colors duration-150 ${isCancelled ? 'opacity-75' : ''}`}>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className={`text-body-md font-bold ${isCancelled ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>
-                          {reservation.locationName}
-                        </span>
-                        <span className="text-label-sm font-medium text-on-surface-variant">
-                          Slot: {reservation.slotId} ({reservation.floor})
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`badge-luxury badge-luxury-${config.variant} flex items-center gap-1`}>
-                        <Icon className={`w-3 h-3 ${config.color}`} />
-                        {config.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-body-md text-on-surface">
-                      {formatDate(reservation.entryTime)}, {formatTime(reservation.entryTime)}
-                    </td>
-                    <td className="px-6 py-4 text-body-md">
-                      {reservation.exitTime ? (
-                        <>
-                          {formatDate(reservation.exitTime)}, {formatTime(reservation.exitTime)}
-                        </>
-                      ) : (
-                        <span className="text-on-surface-variant italic">Ongoing...</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right text-body-md font-medium text-primary">
-                      {formatCurrency(reservation.totalAmount)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {isActive ? (
-                        <button className="btn-luxury-ghost text-primary font-semibold">
-                          Extend Duration
-                        </button>
-                      ) : isCancelled ? (
-                        <span className="text-label-sm font-medium text-outline italic">Refund Issued</span>
-                      ) : (
-                        <button className="btn-luxury-ghost">
-                          <Receipt className="w-4 h-4" />
-                          View Invoice
-                        </button>
-                      )}
-                    </td>
+  const fetchHistory = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await parkingSessionsApi.getByUser(session?.user_id);
+      setSessions(Array.isArray(data) ? data : []);
+    } catch {
+      setSessions(mockReservations);
+      setError("Could not reach server — showing demo data.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, [session?.user_id]);
+
+  return (
+    <div className="min-h-screen bg-white-950 p-4 md:p-6 lg:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Parking History</h1>
+            <p className="text-slate-400 text-sm mt-1">
+              {sessions.length} session{sessions.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <button
+            onClick={fetchHistory}
+            disabled={isLoading}
+            className="p-2 rounded-xl bg-white-800/60 border border-slate-700/50 text-slate-400 hover:text-white transition-all disabled:opacity-40"
+            title="Refresh"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
+          </button>
+        </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 text-amber-400 text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        {/* Table */}
+        <div className="bg-white-900/60 border border-slate-800/60 rounded-2xl overflow-hidden">
+          {isLoading ? (
+            <div className="p-8 space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-14 bg-white-800/60 rounded-xl animate-pulse"
+                />
+              ))}
+            </div>
+          ) : sessions.length === 0 ? (
+            <div className="text-center py-20">
+              <Car className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+              <p className="text-slate-400 font-medium">
+                No parking sessions yet
+              </p>
+              <button
+                onClick={() => navigate("/explorer")}
+                className="mt-4 text-violet-400 text-sm hover:underline"
+              >
+                Find a parking spot
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-800/80">
+                    {[
+                      "Session",
+                      "Location",
+                      "Entry",
+                      "Exit",
+                      "Duration",
+                      "Status",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Pagination/Footer Stats */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-label-md font-medium text-on-surface-variant">Showing 5 of 42 sessions</p>
-        <div className="flex gap-2">
-          <button className="btn-luxury-icon w-10 h-10 p-0" disabled>
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button className="btn-luxury-primary w-10 h-10 p-0">1</button>
-          <button className="btn-luxury-ghost w-10 h-10 p-0">2</button>
-          <button className="btn-luxury-ghost w-10 h-10 p-0">3</button>
-          <button className="btn-luxury-ghost w-10 h-10 p-0">
-            <ChevronRight className="w-5 h-5" />
-          </button>
+                </thead>
+                <tbody>
+                  {sessions.map((item, i) => (
+                    <SessionRow
+                      key={item.session_id || item.id || i}
+                      item={item}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

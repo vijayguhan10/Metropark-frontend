@@ -17,8 +17,11 @@ export const useTimeValidation = (initialEntryTime, initialExitTime) => {
     
     const entry = parseTimeInput(entryTimeInput, entryTime);
     const exit = parseTimeInput(exitTimeInput, exitTime);
-    
-    if (entry < now) {
+
+    // Allow a grace window so the default "now" entry time doesn't become
+    // invalid as the clock ticks past the minute the page was loaded.
+    const GRACE_MS = 15 * 60 * 1000;
+    if (entry.getTime() < now.getTime() - GRACE_MS) {
       errors.entry = 'Entry time cannot be in the past';
     }
     

@@ -1,261 +1,282 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Filter,
   Plus,
-  ChevronLeft,
-  ChevronRight,
-  Receipt,
-  MapPin,
   Clock,
-  AlertCircle,
   CheckCircle,
   XCircle,
-} from 'lucide-react';
-import { reservations, user, vehicles } from '../../data/mockData';
+  AlertCircle,
+  Car,
+  MapPin,
+  RefreshCw,
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { reservationsApi } from "../../api";
+import { reservations as mockReservations } from "../../data/mockData";
 
-const statusConfig = {
-  active: { variant: 'success', label: 'ACTIVE', icon: AlertCircle, color: 'text-warning' },
-  exited: { variant: 'default', label: 'EXITED', icon: CheckCircle, color: 'text-success' },
-  cancelled: { variant: 'error', label: 'CANCELLED', icon: XCircle, color: 'text-error' },
+const STATUS_CONFIG = {
+  WAITING: {
+    label: "Waiting",
+    color: "text-amber-400 bg-amber-400/10 border-amber-400/30",
+    Icon: Clock,
+  },
+  ACTIVE: {
+    label: "Active",
+    color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+    Icon: CheckCircle,
+  },
+  RESERVED: {
+    label: "Reserved",
+    color: "text-violet-400 bg-violet-400/10 border-violet-400/30",
+    Icon: CheckCircle,
+  },
+  EXITED: {
+    label: "Completed",
+    color: "text-slate-400 bg-white-400/10 border-slate-400/30",
+    Icon: CheckCircle,
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    color: "text-red-400 bg-red-400/10 border-red-400/30",
+    Icon: XCircle,
+  },
+  // Mock data statuses
+  active: {
+    label: "Active",
+    color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+    Icon: CheckCircle,
+  },
+  exited: {
+    label: "Completed",
+    color: "text-slate-400 bg-white-400/10 border-slate-400/30",
+    Icon: CheckCircle,
+  },
+  cancelled: {
+    label: "Cancelled",
+    color: "text-red-400 bg-red-400/10 border-red-400/30",
+    Icon: XCircle,
+  },
 };
 
-export default function Reservations() {
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [selectedReservation, setSelectedReservation] = useState(null);
-  const [showExtendModal, setShowExtendModal] = useState(false);
-  const [extendHours, setExtendHours] = useState(1);
+function formatTs(ts) {
+  if (!ts) return "—";
+  try {
+    return new Date(ts).toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  } catch {
+    return ts;
+  }
+}
 
-  const filteredReservations = activeFilter === 'all'
-    ? reservations
-    : reservations.filter(r => r.status === activeFilter);
+function StatusBadge({ status }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.WAITING;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.color}`}
+    >
+      <cfg.Icon className="w-3 h-3" />
+      {cfg.label}
+    </span>
+  );
+}
 
-  const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
-  const formatDate = (dateString) => new Date(dateString).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-  const formatTime = (dateString) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  const activeReservation = reservations.find(r => r.status === 'active');
-
-  const handleExtend = () => {
-    // In a real app, this would call an API
-    console.log('Extend reservation by', extendHours, 'hours');
-    setShowExtendModal(false);
-    setExtendHours(1);
-  };
+function ReservationRow({ item }) {
+  const id = item.reservation_id ?? item.reservationId ?? item.id;
+  const slot = item.slot_id ?? item.slotId ?? item.slotNumber ?? "—";
+  const location = item.locationName || item.location_name || `Slot ${slot}`;
+  const status = (
+    item.reservation_status ||
+    item.reservationStatus ||
+    item.status ||
+    "WAITING"
+  ).toUpperCase();
+  const created =
+    item.created_at || item.createdAt || item.reservedAt || item.reserved_at;
+  const expires = item.expires_at || item.expiresAt || item.expectedExit;
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Page Header */}
-      <div className="page-luxury-header">
-        <h1 className="page-luxury-title">My Reservations</h1>
-        <p className="page-luxury-subtitle">Manage your active and upcoming parking sessions.</p>
-      </div>
+    <tr className="border-b border-slate-800/60 hover:bg-white-800/30 transition-colors">
+      <td className="px-4 py-4 text-sm font-mono text-slate-400">
+        #{String(id).padStart(4, "0")}
+      </td>
+      <td className="px-4 py-4">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+          <span className="text-sm text-white font-medium">{location}</span>
+        </div>
+        {slot !== "—" && (
+          <p className="text-xs text-slate-500 mt-0.5 pl-5">Slot {slot}</p>
+        )}
+      </td>
+      <td className="px-4 py-4 text-sm text-slate-300">{formatTs(created)}</td>
+      <td className="px-4 py-4 text-sm text-slate-300">{formatTs(expires)}</td>
+      <td className="px-4 py-4">
+        <StatusBadge status={status} />
+      </td>
+    </tr>
+  );
+}
 
-      {/* Active Reservation Banner */}
-      {activeReservation && (
-        <div className="luxury-card border-primary/30 bg-primary-light/30 p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-primary-light text-primary rounded-2xl flex items-center justify-center">
-                <CheckCircle className="w-7 h-7" style={{ fontVariationSettings: "'FILL' 1" }} />
-              </div>
-              <div>
-                <h3 className="text-title-lg font-bold text-on-surface">Active Session</h3>
-                <p className="text-label-md text-on-surface-variant">
-                  {activeReservation.locationName} • Slot {activeReservation.slotId} • {activeReservation.floor}
-                </p>
-              </div>
+export default function Reservations() {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+  const [reservations, setReservations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  const fetchReservations = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await reservationsApi.getByUser(session?.user_id);
+      setReservations(Array.isArray(data) ? data : []);
+    } catch {
+      setReservations(mockReservations);
+      setError("Could not reach server — showing demo data.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReservations();
+  }, [session?.user_id]);
+
+  const filtered = reservations.filter((r) => {
+    if (activeFilter === "all") return true;
+    const s = (
+      r.reservation_status ||
+      r.reservationStatus ||
+      r.status ||
+      ""
+    ).toLowerCase();
+    if (activeFilter === "active")
+      return s === "active" || s === "waiting" || s === "reserved";
+    if (activeFilter === "completed")
+      return s === "exited" || s === "completed";
+    if (activeFilter === "cancelled") return s === "cancelled";
+    return true;
+  });
+
+  const TABS = [
+    { key: "all", label: "All" },
+    { key: "active", label: "Active" },
+    { key: "completed", label: "Completed" },
+    { key: "cancelled", label: "Cancelled" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-white-950 p-4 md:p-6 lg:p-8">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">My Reservations</h1>
+            <p className="text-slate-400 text-sm mt-1">
+              {filtered.length} reservation{filtered.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchReservations}
+              disabled={isLoading}
+              className="p-2 rounded-xl bg-white-800/60 border border-slate-700/50 text-slate-400 hover:text-white transition-all disabled:opacity-40"
+              title="Refresh"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+              />
+            </button>
+            <button
+              onClick={() => navigate("/explorer")}
+              className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              New Booking
+            </button>
+          </div>
+        </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 text-amber-400 text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        {/* Filter tabs */}
+        <div className="flex gap-2 bg-white-800/40 border border-slate-700/40 rounded-xl p-1 w-fit">
+          {TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setActiveFilter(key)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                activeFilter === key
+                  ? "bg-violet-600 text-white"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Table */}
+        <div className="bg-white-900/60 border border-slate-800/60 rounded-2xl overflow-hidden">
+          {isLoading ? (
+            <div className="p-8 space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-14 bg-white-800/60 rounded-xl animate-pulse"
+                />
+              ))}
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-label-sm text-on-surface-variant">Time Remaining</p>
-                <p className="text-headline-md font-bold text-primary" id="active-timer">2h 35m</p>
-              </div>
-              <button className="btn-luxury-primary" onClick={() => setShowExtendModal(true)}>
-                <Clock className="w-4 h-4" />
-                Extend
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-20">
+              <Car className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+              <p className="text-slate-400 font-medium">
+                No reservations found
+              </p>
+              <button
+                onClick={() => navigate("/explorer")}
+                className="mt-4 text-violet-400 text-sm hover:underline"
+              >
+                Book your first spot
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filters & Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="flex gap-2 flex-wrap">
-          <button
-            className={`btn-luxury-sm ${activeFilter === 'all' ? 'btn-luxury-primary' : 'btn-luxury-outline'}`}
-            onClick={() => setActiveFilter('all')}
-          >
-            <Filter className="w-4 h-4" />
-            All Sessions
-          </button>
-          <button
-            className={`btn-luxury-sm ${activeFilter === 'active' ? 'btn-luxury-primary' : 'btn-luxury-outline'}`}
-            onClick={() => setActiveFilter('active')}
-          >
-            Active Only
-          </button>
-          <button
-            className={`btn-luxury-sm ${activeFilter === 'exited' ? 'btn-luxury-primary' : 'btn-luxury-outline'}`}
-            onClick={() => setActiveFilter('exited')}
-          >
-            Completed
-          </button>
-          <button
-            className={`btn-luxury-sm ${activeFilter === 'cancelled' ? 'btn-luxury-primary' : 'btn-luxury-outline'}`}
-            onClick={() => setActiveFilter('cancelled')}
-          >
-            Cancelled
-          </button>
-        </div>
-        <Link to="/explorer" className="btn-luxury-secondary">
-          <Plus className="w-4 h-4" />
-          Book New Slot
-        </Link>
-      </div>
-
-      {/* Sessions Table */}
-      <div className="luxury-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="table-luxury">
-            <thead>
-              <tr>
-                <th className="px-6 py-4">Location & Slot</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Entry Time</th>
-                <th className="px-6 py-4">Exit Time</th>
-                <th className="px-6 py-4 text-right">Amount</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/50">
-              {filteredReservations.map((reservation) => {
-                const config = statusConfig[reservation.status] || statusConfig.exited;
-                const isActive = reservation.status === 'active';
-                const isCancelled = reservation.status === 'cancelled';
-                const Icon = config.icon;
-
-                return (
-                  <tr key={reservation.id} className={`transition-colors duration-150 ${isCancelled ? 'opacity-75' : ''}`}>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className={`text-body-md font-bold ${isCancelled ? 'text-on-surface-variant line-through' : 'text-on-surface'}`}>
-                          {reservation.locationName}
-                        </span>
-                        <span className="text-label-sm font-medium text-on-surface-variant">
-                          Slot: {reservation.slotId} ({reservation.floor})
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`badge-luxury badge-luxury-${config.variant} flex items-center gap-1`}>
-                        <Icon className={`w-3 h-3 ${config.color}`} />
-                        {config.label}
-                      </span>
-                    </td>
-                <td className="px-6 py-4 text-body-md text-on-surface">
-                  {formatDate(reservation.entryTime)}, {formatTime(reservation.entryTime)}
-                </td>
-                <td className="px-6 py-4 text-body-md">
-                  {reservation.exitTime ? (
-                    <>
-                      {formatDate(reservation.exitTime)}, {formatTime(reservation.exitTime)}
-                    </>
-                  ) : (
-                    <span className="text-on-surface-variant italic">Ongoing...</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-right text-body-md font-medium text-primary">
-                  {formatCurrency(reservation.totalAmount)}
-                </td>
-                    <td className="px-6 py-4 text-right">
-                      {isActive ? (
-                        <button className="btn-luxury-ghost text-primary font-semibold" onClick={() => setShowExtendModal(true)}>
-                          Extend Duration
-                        </button>
-                      ) : isCancelled ? (
-                        <span className="text-label-sm font-medium text-outline italic">Refund Issued</span>
-                      ) : (
-                        <button className="btn-luxury-ghost">
-                          <Receipt className="w-4 h-4" />
-                          View Invoice
-                        </button>
-                      )}
-                    </td>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-800/80">
+                    {["ID", "Location", "Reserved At", "Expires", "Status"].map(
+                      (h) => (
+                        <th
+                          key={h}
+                          className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                        >
+                          {h}
+                        </th>
+                      ),
+                    )}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <p className="text-label-md font-medium text-on-surface-variant">
-          Showing {filteredReservations.length} of {reservations.length} sessions
-        </p>
-        <div className="flex gap-2">
-          <button className="btn-luxury-icon w-10 h-10 p-0" disabled>
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button className="btn-luxury-primary w-10 h-10 p-0">1</button>
-          <button className="btn-luxury-ghost w-10 h-10 p-0">2</button>
-          <button className="btn-luxury-ghost w-10 h-10 p-0">3</button>
-          <button className="btn-luxury-ghost w-10 h-10 p-0">
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Extend Duration Modal */}
-      <div
-        className={`fixed inset-0 z-[var(--z-modal-backdrop)] bg-black/30 backdrop-blur-sm ${showExtendModal ? 'opacity-100 visible' : 'opacity-0 invisible'} transition-all duration-300`}
-        onClick={() => setShowExtendModal(false)}
-      >
-        <div
-          className={`fixed z-[var(--z-modal)] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm mx-4 bg-surface-container-lowest rounded-3xl shadow-luxury-lg border border-outline-variant/50 p-6 ${showExtendModal ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95'} transition-all duration-300`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <h2 className="text-headline-md font-semibold text-on-surface mb-6">Extend Parking Duration</h2>
-          <div className="space-y-6">
-            <p className="text-body-md text-on-surface-variant">
-              Extend your parking session at <strong>{activeReservation?.locationName}</strong>
-            </p>
-            <div className="space-y-4">
-              <label className="block text-label-md font-medium text-on-surface-variant">Additional Hours</label>
-              <div className="flex items-center justify-center gap-4">
-                <button
-                  className="btn-luxury-icon w-12 h-12 p-0"
-                  onClick={() => setExtendHours(Math.max(1, extendHours - 1))}
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <span className="text-display-sm font-bold text-on-surface w-16 text-center">{extendHours}h</span>
-                <button
-                  className="btn-luxury-icon w-12 h-12 p-0"
-                  onClick={() => setExtendHours(extendHours + 1)}
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="luxury-card-filled p-4">
-                <div className="flex justify-between text-body-md">
-                  <span className="text-on-surface-variant">Additional Cost ({extendHours}h × ${activeReservation?.ratePerHour?.toFixed(2) || '4.50'})</span>
-                  <span className="font-medium">${(extendHours * (activeReservation?.ratePerHour || 4.50)).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-body-md mt-2 pt-2 border-t border-outline-variant/50">
-                  <span className="text-headline-md font-bold text-on-surface">New Total</span>
-                  <span className="text-headline-md font-bold text-primary">${((activeReservation?.totalAmount || 21.25) + extendHours * (activeReservation?.ratePerHour || 4.50)).toFixed(2)}</span>
-                </div>
-              </div>
+                </thead>
+                <tbody>
+                  {filtered.map((item, i) => (
+                    <ReservationRow
+                      key={item.reservation_id || item.id || i}
+                      item={item}
+                    />
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="flex gap-3 pt-4">
-              <button className="btn-luxury-outline flex-1" onClick={() => setShowExtendModal(false)}>Cancel</button>
-              <button className="btn-luxury-primary flex-1" onClick={handleExtend}>Confirm Extension</button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

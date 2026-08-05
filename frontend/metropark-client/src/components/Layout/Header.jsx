@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Search,
   Bell,
@@ -8,19 +8,31 @@ import {
   ChevronDown,
   User,
   LogOut,
-  X,
 } from 'lucide-react';
-import { user, notifications } from '../../data/mockData';
+import { notifications } from '../../data/mockData';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { session, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const profileMenuRef = useRef(null);
   const notificationsRef = useRef(null);
 
+  const displayName = session?.name || 'User';
+  const displayEmail = session?.email || '';
+  const displayMembership = session?.membership || 'Member';
+
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const handleLogout = () => {
+    setShowProfileMenu(false);
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -163,18 +175,18 @@ export default function Header() {
                   aria-haspopup="true"
                 >
                   <div className="avatar-luxury avatar-luxury-sm">
-                    <span className="font-semibold">{user.name.charAt(0)}</span>
+                    <span className="font-semibold">{displayName.charAt(0).toUpperCase()}</span>
                   </div>
-                  <span className="hidden lg:block text-label-md font-medium text-on-surface">{user.name}</span>
+                  <span className="hidden lg:block text-label-md font-medium text-on-surface">{displayName}</span>
                   <ChevronDown className="w-4 h-4 text-on-surface-variant hidden lg:block" />
                 </button>
 
                 {showProfileMenu && (
                   <div className="dropdown-luxury right-0 mt-2 w-56 animate-fade-in-up">
                     <div className="px-4 py-4 border-b border-outline-variant/50">
-                      <p className="text-title-md font-semibold text-on-surface">{user.name}</p>
-                      <p className="text-label-sm text-on-surface-variant mt-0.5">{user.email}</p>
-                      <span className="badge-luxury badge-luxury-primary mt-2 inline-block">{user.membership}</span>
+                      <p className="text-title-md font-semibold text-on-surface">{displayName}</p>
+                      <p className="text-label-sm text-on-surface-variant mt-0.5">{displayEmail}</p>
+                      <span className="badge-luxury badge-luxury-primary mt-2 inline-block">{displayMembership}</span>
                     </div>
                     <Link
                       to="/profile"
@@ -195,7 +207,7 @@ export default function Header() {
                     <div className="divider-luxury mx-2" />
                     <button
                       className="dropdown-luxury-item text-error"
-                      onClick={() => setShowProfileMenu(false)}
+                      onClick={handleLogout}
                     >
                       <LogOut className="w-5 h-5" />
                       <span>Logout</span>

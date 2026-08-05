@@ -1,8 +1,7 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Map,
   Calendar,
   History,
   HelpCircle,
@@ -11,9 +10,8 @@ import {
   Settings,
   PlusCircle,
   Compass,
-  Dock,
 } from 'lucide-react';
-import { user } from '../../data/mockData';
+import { useAuth } from '../../context/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -26,11 +24,20 @@ const bottomNavigation = [
   { name: 'Profile', href: '/profile', icon: User },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Help', href: '/help', icon: HelpCircle },
-  { name: 'Logout', href: '/logout', icon: LogOut },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { session, logout } = useAuth();
+
+  const displayName = session?.name || 'User';
+  const displayMembership = session?.membership || 'Member';
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <aside className="hidden lg:flex flex-col h-[calc(100vh-4.5rem)] sticky left-0 top-18 p-4 bg-surface/80 backdrop-blur-xl border-r border-outline-variant/50 w-64 flex-shrink-0">
@@ -38,11 +45,11 @@ export default function Sidebar() {
       <div className="mb-6 px-2">
         <div className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-surface-container transition-colors">
           <div className="avatar-luxury avatar-luxury-md">
-            <span className="font-semibold">{user.name.charAt(0)}</span>
+            <span className="font-semibold">{displayName.charAt(0).toUpperCase()}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-title-md font-semibold text-on-surface truncate">{user.name}</p>
-            <p className="text-label-sm text-on-surface-variant truncate">{user.membership}</p>
+            <p className="text-title-md font-semibold text-on-surface truncate">{displayName}</p>
+            <p className="text-label-sm text-on-surface-variant truncate">{displayMembership}</p>
           </div>
         </div>
       </div>
@@ -73,13 +80,14 @@ export default function Sidebar() {
 
       {/* Bottom Section */}
       <div className="mt-auto pt-4 border-t border-outline-variant/50 space-y-3">
-        {/* Book New Slot Button */}
-        <button className="btn-luxury-primary w-full justify-center gap-2">
+        <button
+          onClick={() => navigate('/explorer')}
+          className="btn-luxury-primary w-full justify-center gap-2"
+        >
           <PlusCircle className="w-5 h-5" />
           <span>Book New Slot</span>
         </button>
 
-        {/* Bottom Navigation */}
         <div className="space-y-1 pt-2">
           {bottomNavigation.map((item) => (
             <NavLink
@@ -91,6 +99,13 @@ export default function Sidebar() {
               <span className="text-label-md font-medium">{item.name}</span>
             </NavLink>
           ))}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-error hover:bg-error-light transition-colors duration-200 w-full"
+          >
+            <LogOut className="w-5 h-5 shrink-0" />
+            <span className="text-label-md font-medium">Logout</span>
+          </button>
         </div>
       </div>
     </aside>

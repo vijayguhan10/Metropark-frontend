@@ -1,561 +1,300 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  MapPin,
-  Car,
-  BatteryCharging,
-  Maximize,
-  ShieldCheck,
-  Check,
-  ChevronDown,
-  Navigation,
-  Zap,
-  Expand,
-  ArrowRight,
-} from "lucide-react";
-import { parkingLocations, floorPlans } from "../../data/mockData";
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, MapPin, Car, Zap, AlertCircle, RefreshCw } from 'lucide-react';
+import { parkingLocations as mockLocations, floorPlans as mockFloorPlans } from '../../data/mockData';
+import { parkingSlotsApi, locationsApi } from '../../api';
 
-// --- COMPONENTS ---
-
-const getSlotIcon = (type, size = 20, strokeWidth = 1.5, className = "") => {
-  switch (type) {
-    case "ev":
-      return <Zap size={size} strokeWidth={strokeWidth} className={className} />;
-    case "oversize":
-      return <Expand size={size} strokeWidth={strokeWidth} className={className} />;
-    case "compact":
-      return <Car size={size} strokeWidth={strokeWidth} className={className} />;
-    default:
-      return <Car size={size} strokeWidth={strokeWidth} className={className} />;
-  }
+const VEHICLE_TYPE_MAP = {
+  1: { label: 'Standard', color: 'violet', rate: 5 },
+  2: { label: 'Compact', color: 'blue', rate: 4 },
+  3: { label: 'EV', color: 'emerald', rate: 7 },
+  4: { label: 'Oversize', color: 'amber', rate: 8 },
 };
 
-const getSlotTypeLabel = (type) => {
-  const labels = {
-    standard: "Standard",
-    compact: "Compact",
-    ev: "EV",
-    oversize: "Oversize",
-  };
-  return labels[type] || type;
+const TYPE_COLORS = {
+  violet: {
+    available: 'bg-violet-600/20 border-violet-500/50 text-violet-300 hover:bg-violet-600/40 hover:border-violet-400 cursor-pointer',
+    occupied: '/30 border-slate-600/30 text-slate-600 cursor-not-allowed',
+  },
+  blue: {
+    available: 'bg-blue-600/20 border-blue-500/50 text-blue-300 hover:bg-blue-600/40 hover:border-blue-400 cursor-pointer',
+    occupied: '/30 border-slate-600/30 text-slate-600 cursor-not-allowed',
+  },
+  emerald: {
+    available: 'bg-emerald-600/20 border-emerald-500/50 text-emerald-300 hover:bg-emerald-600/40 hover:border-emerald-400 cursor-pointer',
+    occupied: '/30 border-slate-600/30 text-slate-600 cursor-not-allowed',
+  },
+  amber: {
+    available: 'bg-amber-600/20 border-amber-500/50 text-amber-300 hover:bg-amber-600/40 hover:border-amber-400 cursor-pointer',
+    occupied: '/30 border-slate-600/30 text-slate-600 cursor-not-allowed',
+  },
 };
 
-const getSlotTypeColor = (type) => {
-  const colors = {
-    standard: "bg-blue-100 text-blue-700 border-blue-200",
-    compact: "bg-amber-100 text-amber-700 border-amber-200",
-    ev: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    oversize: "bg-purple-100 text-purple-700 border-purple-200",
-  };
-  return colors[type] || "bg-gray-100 text-gray-700 border-gray-200";
-};
-
-const SlotCard = ({ slot, isSelected, onClick, index }) => {
-  const isAvailable = slot.status === "available";
-  const isOccupied = slot.status === "occupied";
-
-  // Base styles - COMPACT VERSION
-  const baseStyles = `
-    relative flex flex-col items-center justify-between 
-    h-32 py-2.5 px-2 border-2 rounded-lg 
-    transition-all duration-200 ease-out cursor-pointer
-    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1
-  `;
-
-  let containerClasses = baseStyles;
-  let textClasses = "text-xs font-semibold tracking-wider text-center w-full ";
-  let iconClasses = "flex-1 flex items-center justify-center w-full transition-all duration-200 ";
-  let badgeClasses = "text-[9px] uppercase tracking-widest font-medium px-1.5 py-0.5 rounded ";
-
-  if (isSelected) {
-    containerClasses += " border-primary bg-primary/5 shadow-md shadow-primary/10 scale-[1.015] z-10";
-    textClasses += "text-primary";
-    iconClasses += "text-primary";
-    badgeClasses += "bg-primary/10 text-primary border-primary/20";
-  } else if (isAvailable) {
-    containerClasses += " border-gray-200 bg-white hover:border-primary/50 hover:bg-primary/5 hover:shadow-sm hover:shadow-primary/5";
-    textClasses += "text-gray-900";
-    iconClasses += "text-gray-600";
-    badgeClasses += "bg-gray-100 text-gray-500 border-gray-200";
-  } else if (isOccupied) {
-    containerClasses += " border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed";
-    textClasses += "text-gray-400";
-    iconClasses += "text-gray-300";
-    badgeClasses += "bg-gray-100 text-gray-400 border-gray-200";
-  }
-
-  // Staggered animation delay
-  const style = {
-    animationDelay: `${index * 20}ms`,
-    animationFillMode: 'both',
-  };
+function SlotCard({ slot, onClick }) {
+  const typeInfo = VEHICLE_TYPE_MAP[slot.vehicle_type_id] || VEHICLE_TYPE_MAP[1];
+  const isAvailable = slot.current_status === 'AVAILABLE';
+  const colors = TYPE_COLORS[typeInfo.color];
 
   return (
-    <div
+    <button
       onClick={() => isAvailable && onClick(slot)}
-      className={containerClasses}
-      style={style}
-      role="button"
-      tabIndex={isAvailable ? 0 : -1}
-      onKeyDown={(e) => {
-        if (isAvailable && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          onClick(slot);
-        }
-      }}
-      aria-label={`Parking space ${slot.id}, ${getSlotTypeLabel(slot.type)}, ${isAvailable ? 'Available' : 'Occupied'}`}
-      aria-pressed={isSelected}
+      disabled={!isAvailable}
+      title={isAvailable ? `${slot.display_code} — ${typeInfo.label} — $${typeInfo.rate}/hr` : `${slot.display_code} — Occupied`}
+      className={`relative w-full aspect-3/2 min-h-13 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all duration-150 text-center px-1 ${
+        isAvailable ? colors.available : colors.occupied
+      }`}
     >
-      <span className={textClasses}>{slot.id}</span>
+      {slot.vehicle_type_id === 3 && isAvailable && (
+        <Zap className="absolute top-1 right-1 w-3 h-3 text-emerald-400" />
+      )}
+      <span className="text-xs font-bold leading-none">{slot.display_code}</span>
+      {!isAvailable && (
+        <Car className="w-3.5 h-3.5 opacity-50" />
+      )}
+    </button>
+  );
+}
 
-      <div className={iconClasses}>
-        {isAvailable && !isSelected ? (
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-gray-400">
-              Free
-            </span>
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          </div>
-        ) : (
-          getSlotIcon(slot.type, 22, 1.5)
-        )}
+function SectionRow({ label, slots, onSlotClick }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xs font-semibold  uppercase tracking-widest">{label}</span>
+        <div className="flex-1 h-px /50" />
+        <span className="text-xs text-slate-500">
+          {slots.filter((s) => s.current_status === 'AVAILABLE').length}/{slots.length} free
+        </span>
       </div>
-
-      <span className={badgeClasses}>
-        {getSlotTypeLabel(slot.type)}
-      </span>
-
-      {isSelected && (
-        <div className="absolute top-1.5 right-1.5">
-          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
-            <Check size={10} className="text-white" />
-          </div>
-        </div>
-      )}
-
-      {/* Subtle selection ring animation */}
-      {isSelected && (
-        <div className="absolute inset-0 rounded-lg border border-primary/30 animate-ping" aria-hidden="true" />
-      )}
+      <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))' }}>
+        {slots.map((slot) => (
+          <SlotCard key={slot.slot_id} slot={slot} onClick={onSlotClick} />
+        ))}
+      </div>
     </div>
   );
-};
+}
 
-// Section Header Component - COMPACT
-const SectionHeader = ({ sectionKey, slots, isLeftColumn }) => {
-  const availableCount = slots.filter((s) => s.status === "available").length;
+function Legend() {
+  return (
+    <div className="flex flex-wrap gap-4 text-xs ">
+      {[
+        { label: 'Standard', cls: 'bg-violet-600/20 border-violet-500/50' },
+        { label: 'Compact', cls: 'bg-blue-600/20 border-blue-500/50' },
+        { label: 'EV', cls: 'bg-emerald-600/20 border-emerald-500/50' },
+        { label: 'Oversize', cls: 'bg-amber-600/20 border-amber-500/50' },
+        { label: 'Occupied', cls: '/30 border-slate-600/30' },
+      ].map(({ label, cls }) => (
+        <div key={label} className="flex items-center gap-1.5">
+          <div className={`w-4 h-3 rounded border ${cls}`} />
+          <span>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// API may return camelCase or snake_case — normalize to snake_case internally
+function normalizeSlot(raw, fallbackLocationId) {
+  const status = (raw.current_status ?? raw.currentStatus ?? 'AVAILABLE').toString().toUpperCase();
+  return {
+    slot_id: raw.slot_id ?? raw.slotId,
+    display_code: raw.display_code ?? raw.displayCode ?? String(raw.slot_id ?? raw.slotId ?? ''),
+    vehicle_type_id: raw.vehicle_type_id ?? raw.vehicleTypeId ?? 1,
+    reservation_class_id: raw.reservation_class_id ?? raw.reservationClassId ?? null,
+    sensor_id: raw.sensor_id ?? raw.sensorId ?? null,
+    current_status: status,
+    location_id: raw.location_id ?? raw.locationId ?? fallbackLocationId,
+    _section: raw._section,
+    _floor: raw._floor,
+  };
+}
+
+export default function SlotMap() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const locationId = searchParams.get('location') || 'loc_001';
+
+  const [slots, setSlots] = useState([]);
+  const [location, setLocation] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [slotsData, locData] = await Promise.all([
+          parkingSlotsApi.getByLocation(locationId),
+          locationsApi.getById(locationId).catch(() => null),
+        ]);
+        setSlots((slotsData || []).map((s) => normalizeSlot(s, locationId)));
+
+        const mockLoc = mockLocations.find((l) => l.id === locationId);
+        setLocation(
+          locData
+            ? {
+                id: locData.location_id ?? locData.locationId ?? locationId,
+                name: locData.location_name ?? locData.locationName ?? 'Parking Location',
+                address: mockLoc?.address || locData.city || '',
+                pricePerHour: mockLoc?.pricePerHour || 5,
+              }
+            : mockLoc || { id: locationId, name: 'Parking Location', address: '', pricePerHour: 5 }
+        );
+      } catch {
+        // Fall back to mock floor plan data
+        const mockLoc = mockLocations.find((l) => l.id === locationId) || mockLocations[0];
+        setLocation(mockLoc);
+        const plan = mockFloorPlans[mockLoc.id] || mockFloorPlans[mockLocations[0].id];
+        const mockSlots = plan?.floors?.flatMap((floor) =>
+          floor.sections?.flatMap((section) =>
+            (section.slots || []).map((s) => ({
+              slot_id: s.id,
+              display_code: s.id,
+              vehicle_type_id: s.type === 'ev' ? 3 : s.type === 'compact' ? 2 : s.type === 'oversize' ? 4 : 1,
+              current_status: s.status === 'available' ? 'AVAILABLE' : 'OCCUPIED',
+              location_id: locationId,
+              _section: section.name,
+              _floor: floor.name,
+            }))
+          )
+        ) || [];
+        setSlots(mockSlots);
+        setError('Using demo data — live slot status unavailable.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, [locationId]);
+
+  const handleSlotClick = (slot) => {
+    const typeInfo = VEHICLE_TYPE_MAP[slot.vehicle_type_id] || VEHICLE_TYPE_MAP[1];
+    const rate = location?.pricePerHour || typeInfo.rate;
+    navigate(
+      `/checkout?location=${locationId}&slot_id=${slot.slot_id}&slot_code=${encodeURIComponent(slot.display_code)}&type=${typeInfo.label.toLowerCase()}&vehicle_type_id=${slot.vehicle_type_id}&rate=${rate}&floor=${encodeURIComponent(slot._section || slot._floor || 'Main')}`
+    );
+  };
+
+  // Group slots by section prefix (e.g. "A-101" → section "A")
+  const sections = slots.reduce((acc, slot) => {
+    const prefix = slot._section || slot.display_code?.split('-')[0] || 'Main';
+    if (!acc[prefix]) acc[prefix] = [];
+    acc[prefix].push(slot);
+    return acc;
+  }, {});
+
+  const availableCount = slots.filter((s) => s.current_status === 'AVAILABLE').length;
   const totalCount = slots.length;
 
   return (
-    <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
-      <div className="flex items-center gap-1.5">
-        <div className={`w-6 h-6 rounded flex items-center justify-center ${
-          isLeftColumn ? 'bg-primary/10 text-primary' : 'bg-emerald/10 text-emerald'
-        }`}>
-          <span className="text-xs font-bold">{sectionKey}</span>
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-gray-900">Section {sectionKey}</h3>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider">
-            {availableCount}/{totalCount} free
-          </p>
-        </div>
-      </div>
-      {/* Visual indicator bar - compact */}
-      <div className="w-24 h-0.5 bg-gray-100 rounded-full overflow-hidden ml-2">
-        <div 
-          className="h-full bg-primary transition-all duration-300 ease-out"
-          style={{ width: `${(availableCount / totalCount) * 100}%` }}
-        />
-      </div>
-    </div>
-  );
-};
+    <div className="min-h-screen  p-4 md:p-6 lg:p-8 text-black">
+      <div className="max-w-5xl mx-auto space-y-6">
 
-// Floor Selector Component - COMPACT
-const FloorSelector = ({ floors, selectedIndex, onSelect }) => {
-  return (
-    <div className="flex items-center gap-0.5 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
-      {floors.map((floor, index) => (
-        <button
-          key={floor.id}
-          onClick={() => onSelect(index)}
-          className={`relative px-4 py-2 rounded text-xs font-semibold transition-all duration-150 ${
-            selectedIndex === index
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-          }`}
-          aria-current={selectedIndex === index ? 'step' : undefined}
-        >
-          {floor.name}
-          {selectedIndex === index && (
-            <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-          )}
-        </button>
-      ))}
-    </div>
-  );
-};
-
-// Driveway Indicator Component - COMPACT
-const DrivewayIndicator = ({ label, icon, position }) => {
-  return (
-    <div className="flex items-center justify-center gap-3 my-5">
-      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur-sm rounded-full border border-gray-200/50 shadow-sm">
-        {icon && <icon size={12} className="text-gray-400" />}
-        <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-gray-500 whitespace-nowrap">
-          {label}
-        </span>
-      </div>
-      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-    </div>
-  );
-};
-
-// Legend Component - COMPACT
-const Legend = () => {
-  const items = [
-    { type: 'standard', label: 'Standard', color: 'bg-blue-500' },
-    { type: 'compact', label: 'Compact', color: 'bg-amber-500' },
-    { type: 'ev', label: 'EV', color: 'bg-emerald-500' },
-    { type: 'oversize', label: 'Oversize', color: 'bg-purple-500' },
-  ];
-
-  return (
-    <div className="flex flex-wrap items-center gap-2 p-3 bg-gray-50/50 rounded-lg border border-gray-100 mb-4">
-      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mr-1">Legend:</span>
-      {items.map((item) => (
-        <div key={item.type} className="flex items-center gap-1">
-          <div className={`w-2.5 h-2.5 rounded ${item.color}`} />
-          <span className="text-[10px] text-gray-600">{item.label}</span>
-        </div>
-      ))}
-      <div className="flex items-center gap-1 ml-1 border-l border-gray-200 pl-2">
-        <div className="w-5 h-5 border border-gray-300 rounded flex items-center justify-center">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-        </div>
-        <span className="text-[10px] text-gray-600">Free</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <div className="w-5 h-5 border border-gray-200 rounded bg-gray-50 flex items-center justify-center">
-          <div className="w-3 h-3 rounded bg-gray-300" />
-        </div>
-        <span className="text-[10px] text-gray-600">Taken</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <div className="w-5 h-5 border border-primary rounded bg-primary/5 flex items-center justify-center">
-          <Check size={8} className="text-primary" />
-        </div>
-        <span className="text-[10px] text-gray-600">Selected</span>
-      </div>
-    </div>
-  );
-};
-
-export default function SlotMapWebPanel() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  
-  const locationId = searchParams.get("location") || "loc_001";
-  const location = parkingLocations.find((l) => l.id === locationId) || parkingLocations[0];
-  const floorData = floorPlans[locationId] || floorPlans[parkingLocations[0].id];
-
-  const [selectedFloorIndex, setSelectedFloorIndex] = useState(0);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  const currentFloor = floorData.floors[selectedFloorIndex];
-
-  // Group slots by section for layout
-  const groupedSlots = useMemo(() => {
-    const groups = {};
-    currentFloor.sections.forEach((section) => {
-      groups[section] = currentFloor.slots.filter((s) => s.section === section);
-    });
-    return groups;
-  }, [currentFloor]);
-
-  // Trigger load animation
-  useEffect(() => {
-    setIsLoaded(false);
-    const timer = setTimeout(() => setIsLoaded(true), 50);
-    return () => clearTimeout(timer);
-  }, [selectedFloorIndex]);
-
-  const handleSlotSelection = (slot) => {
-    setSelectedSlot(slot.id === selectedSlot?.id ? null : slot);
-  };
-
-  const handleFloorChange = (index) => {
-    setSelectedFloorIndex(index);
-    setSelectedSlot(null);
-  };
-
-  const handleProceedToCheckout = () => {
-    if (selectedSlot) {
-      navigate(`/checkout?location=${locationId}&slot=${selectedSlot.id}&floor=${currentFloor.name}&type=${selectedSlot.type}&rate=${location.pricePerHour}`);
-    }
-  };
-
-  // Calculate stats
-  const totalSlots = currentFloor.slots.length;
-  const availableSlots = currentFloor.slots.filter(s => s.status === 'available').length;
-  const occupiedSlots = currentFloor.slots.filter(s => s.status === 'occupied').length;
-
-  return (
-    <div className="flex h-screen w-full bg-gray-50 text-gray-900  overflow-hidden">
-      {/* LEFT CONTENT: Map Area */}
-      <div className="flex-1 flex flex-col h-full bg-white border-r border-gray-100">
-        {/* Header - COMPACT */}
-        <header className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <button 
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-100 text-gray-500 hover:text-gray-900"
-              aria-label="Go back"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-gray-900">
-                {location.name}
-              </h1>
-              <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1 uppercase tracking-wider">
-                <MapPin size={11} className="flex-shrink-0" /> {location.address}
-              </p>
-            </div>
-          </div>
-
-          {/* Floor Navigation - COMPACT */}
-          <FloorSelector 
-            floors={floorData.floors} 
-            selectedIndex={selectedFloorIndex} 
-            onSelect={handleFloorChange} 
-          />
-        </header>
-
-        {/* Stats Bar - COMPACT */}
-        <div className="px-5 py-3 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="text-gray-600">{availableSlots} Free</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-              <span className="text-gray-600">{occupiedSlots} Taken</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-              <span className="text-gray-600">{totalSlots} Total</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-            <Navigation size={11} />
-            <span>L{selectedFloorIndex + 1}/{floorData.floors.length}</span>
-          </div>
-        </div>
-
-        {/* Map Grid Container */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar">
-          <div className="max-w-6xl mx-auto relative">
-            {/* Legend - COMPACT */}
-            <Legend />
-
-            {/* Top Driveway Indicator - COMPACT */}
-            <DrivewayIndicator 
-              label="Entry" 
-              icon={Navigation} 
-              position="top" 
-            />
-
-            {/* 2x2 Grid Layout for Sections - COMPACT GAPS */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-5">
-              {/* Loop through sections to maintain specific layout */}
-              {currentFloor.sections.map((sectionKey, sectionIndex) => {
-                const slots = groupedSlots[sectionKey];
-                if (!slots || slots.length === 0) return null;
-
-                const isLeftColumn = sectionIndex % 2 === 0;
-
-                return (
-                  <div 
-                    key={sectionKey} 
-                    className={`flex flex-col animate-fade-in-up ${isLoaded ? '' : 'opacity-0'}`}
-                    style={{ animationDelay: `${sectionIndex * 80}ms` }}
-                  >
-                    <SectionHeader 
-                      sectionKey={sectionKey} 
-                      slots={slots} 
-                      isLeftColumn={isLeftColumn} 
-                    />
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {slots.map((slot, slotIndex) => (
-                        <SlotCard
-                          key={slot.id}
-                          slot={slot}
-                          isSelected={selectedSlot?.id === slot.id}
-                          onClick={handleSlotSelection}
-                          index={slotIndex}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Bottom Driveway Indicator - COMPACT */}
-            <DrivewayIndicator 
-              label="Exit" 
-              icon={Navigation} 
-              position="bottom" 
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT CONTENT: Booking Sidebar - COMPACT */}
-      <div className="w-[360px] h-full bg-white flex flex-col shadow-[-12px_0_24px_rgba(0,0,0,0.03)] z-10 relative hidden lg:flex">
-        {/* Sidebar Image Cover - REDUCED HEIGHT */}
-        <div className="h-48 w-full relative overflow-hidden">
-          <img
-            src={location.image}
-            alt={location.name}
-            className="w-10px h-full object-cover transition-all duration-700 ease-out hover:scale-105"
-          />
-          <div className="absolute inset-0  to-transparent" />
-          {/* Floor indicator badge on image */}
-          <div className="absolute bottom-3 left-3 right-3 flex justify-between">
-            <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg border border-gray-100">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Floor</p>
-              <p className="text-sm font-bold text-gray-900">{currentFloor.name}</p>
-            </div>
-            <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg border border-gray-100 text-right">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider">Free</p>
-              <p className="text-sm font-bold text-emerald-600">{availableSlots}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar Content - COMPACT */}
-        <div className="flex-1 flex flex-col px-3 pb-3 -mt-4 relative z-10">
-          {/* Rate & Status Card - COMPACT */}
-          <div className="bg-white p-3 border border-gray-100 rounded-lg shadow-sm mb-3 flex justify-between items-center">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Zap size={16} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Hourly Rate</p>
-                <p className="text-lg font-bold text-gray-900">
-                  ${location.pricePerHour.toFixed(2)}
-                  <span className="text-xs font-normal text-gray-500">/hr</span>
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Status</p>
-              <div className="flex items-center gap-1 justify-end">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-xs font-semibold text-emerald-600">Open</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Features Badges - COMPACT */}
-          <div className="flex flex-wrap gap-1 mb-3">
-            {location.features.map((feature) => (
-              <span 
-                key={feature} 
-                className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-gray-50 text-gray-600 border border-gray-100"
-              >
-                {feature}
-              </span>
-            ))}
-          </div>
-
-          <div className="flex-1 min-h-0">
-            <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100 pb-1.5 mb-3">
-              Reservation Summary
-            </h3>
-
-            {selectedSlot ? (
-              <div className="space-y-3 animate-fade-in-up">
-                <div className="bg-gray-50/50 rounded-lg p-2.5 border border-gray-100">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Selected Space</p>
-                      <p className="text-lg font-bold text-gray-900">{selectedSlot.id}</p>
-                    </div>
-                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Check size={14} className="text-primary" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div className="bg-white p-2.5 rounded-lg border border-gray-100">
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Floor</p>
-                    <p className="text-sm font-semibold text-gray-900 flex items-center gap-1">
-                      <Navigation size={11} className="text-gray-400" />
-                      {currentFloor.name}
-                    </p>
-                  </div>
-                  <div className="bg-white p-2.5 rounded-lg border border-gray-100">
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Type</p>
-                    <p className="text-sm font-semibold text-gray-900 flex items-center gap-1">
-                      {getSlotIcon(selectedSlot.type, 12, 2, 'text-primary')}
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getSlotTypeColor(selectedSlot.type)}`}>
-                        {getSlotTypeLabel(selectedSlot.type)}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
-                {/* Price estimate - COMPACT */}
-                <div className="bg-primary/5 border border-primary/10 rounded-lg p-2.5">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-[10px] text-primary uppercase tracking-wider mb-0.5">Est. Cost</p>
-                      <p className="text-sm font-bold text-primary">${location.pricePerHour.toFixed(2)}/hr</p>
-                    </div>
-                    <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-                      <ArrowLeft size={14} className="text-white rotate-180" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="h-36 flex flex-col items-center justify-center text-center text-gray-400 border-2 border-dashed border-gray-200 bg-gray-50/50 rounded-lg p-3">
-                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center mb-2">
-                  <Car size={20} className="text-gray-300" />
-                </div>
-                <p className="text-[10px] font-medium text-gray-600 mb-0.5">No Space Selected</p>
-                <p className="text-[9px] text-gray-400 max-w-xs">
-                  Tap an available space on the map to view details and continue.
-                </p>
+        {/* Header */}
+        <div className="flex items-start gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-xl  border border-slate-700/50  hover:text-white hover:border-violet-500/50 transition-all mt-0.5"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-white">
+              {isLoading ? 'Loading…' : (location?.name || 'Parking Location')}
+            </h1>
+            {location?.address && (
+              <div className="flex items-center gap-1  text-sm mt-1">
+                <MapPin className="w-3.5 h-3.5" />
+                {location.address}
               </div>
             )}
           </div>
+          {!isLoading && (
+            <div className="text-right">
+              <div className="text-xl font-bold text-violet-400">{availableCount}</div>
+              <div className="text-xs text-slate-500">of {totalCount} free</div>
+            </div>
+          )}
+        </div>
 
-          {/* Action Button - COMPACT */}
-          <div className="pt-2 border-t absolute bottom-30 left-10 right-0 border-gray-100">
+        {/* Rate card */}
+        {!isLoading && location && (
+          <div className="flex items-center justify-between  border border-slate-700/40 rounded-2xl px-5 py-3">
+            <div className="text-sm ">Starting rate</div>
+            <div className="text-lg font-bold text-white">${location.pricePerHour}<span className="text-sm font-normal ">/hr</span></div>
+          </div>
+        )}
+
+        {/* Error banner */}
+        {error && (
+          <div className="flex items-center gap-2  border border-amber-500/30 rounded-xl px-4 py-3 text-amber-400 text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        {/* Instructions */}
+        {!isLoading && availableCount > 0 && (
+          <p className=" text-sm">
+            Click any available slot to proceed directly to payment.
+          </p>
+        )}
+
+        {/* Legend */}
+        {!isLoading && slots.length > 0 && (
+          <Legend />
+        )}
+
+        {/* Slot grid */}
+        {isLoading ? (
+          <div className="space-y-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="animate-pulse space-y-3">
+                <div className="h-4  rounded w-24" />
+                <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))' }}>
+                  {Array.from({ length: 12 }).map((_, j) => (
+                    <div key={j} className="h-14 /50 rounded-xl" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : slots.length === 0 ? (
+          <div className="text-center py-20">
+            <Car className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+            <p className=" font-medium">No slot data available for this location.</p>
             <button
-              disabled={!selectedSlot}
-              onClick={handleProceedToCheckout}
-              className={`w-full py-2.5 px-3 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 ${
-                selectedSlot
-                  ? "bg-gray-900 text-white hover:bg-black hover:shadow-lg hover:shadow-gray-900/20 active:scale-[0.98]"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-              }`}
+              onClick={() => navigate('/explorer')}
+              className="mt-4 text-violet-400 text-sm hover:underline"
             >
-              {selectedSlot ? "Proceed to Checkout" : "Select a Space"}
+              ← Back to Explorer
             </button>
           </div>
-        </div>
+        ) : availableCount === 0 ? (
+          <div className="text-center py-16  border border-slate-700/30 rounded-2xl">
+            <div className="text-4xl mb-3">🚫</div>
+            <p className="text-white font-semibold">This location is full</p>
+            <p className=" text-sm mt-1 mb-4">All {totalCount} slots are currently occupied.</p>
+            <button
+              onClick={() => navigate('/explorer')}
+              className="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            >
+              Find Another Location
+            </button>
+          </div>
+        ) : (
+          <div className=" border border-slate-800/60 rounded-2xl p-5 space-y-7">
+            {Object.entries(sections).map(([label, sectionSlots]) => (
+              <SectionRow
+                key={label}
+                label={`Section ${label}`}
+                slots={sectionSlots}
+                onSlotClick={handleSlotClick}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
