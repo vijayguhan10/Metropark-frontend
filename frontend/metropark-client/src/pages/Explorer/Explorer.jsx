@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -13,14 +13,28 @@ import {
   Shield,
   Car,
   AlertCircle,
+  Calendar,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { parkingLocations as mockLocations } from "../../data/mockData";
 import { locationsApi, parkingSlotsApi } from "../../api";
 
 const ITEMS_PER_PAGE = 9;
 
+// Generate 24-hour time slots
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let h = 0; h < 24; h++) {
+    const hour = h.toString().padStart(2, "0");
+    slots.push(`${hour}:00`);
+  }
+  return slots;
+};
+
+const TIME_SLOTS = generateTimeSlots();
+
 function enrichLocation(apiLoc, slotCounts) {
-  // API may return camelCase or snake_case field names
   const locId = apiLoc.location_id || apiLoc.locationId;
   const locName = apiLoc.location_name || apiLoc.locationName;
   const locCity = apiLoc.city;
@@ -39,13 +53,10 @@ function enrichLocation(apiLoc, slotCounts) {
     city: locCity || mock.address || "",
     address: mock.address || locCity || "",
     status: locStatus,
-
     totalSlots,
     availableSlots,
-
     hasParkingSlots: totalSlots > 0,
     isFullyOccupied: totalSlots > 0 && availableSlots === 0,
-
     pricePerHour: mock.pricePerHour || 5,
     rating: mock.rating || 4.5,
     totalReviews: mock.totalReviews || 0,
@@ -56,47 +67,190 @@ function enrichLocation(apiLoc, slotCounts) {
     isOpen24h: mock.isOpen24h || false,
   };
 }
+
 function SkeletonCard() {
   return (
-    <div className=" border border-slate-700/50 rounded-2xl overflow-hidden animate-pulse">
-      <div className="h-48 bg-white-700/60" />
+    <div className="luxury-card animate-pulse">
+      <div className="h-48 bg-surface-container" />
       <div className="p-5 space-y-3">
-        <div className="h-5 bg-white-700 rounded w-3/4" />
-        <div className="h-4 bg-white-700/60 rounded w-1/2" />
+        <div className="h-5 bg-surface-container rounded w-3/4" />
+        <div className="h-4 bg-surface-container rounded w-1/2" />
         <div className="flex gap-2 mt-4">
-          <div className="h-8 bg-white-700/60 rounded-lg flex-1" />
-          <div className="h-8 bg-white-700/60 rounded-lg flex-1" />
+          <div className="h-8 bg-surface-container rounded-lg flex-1" />
+          <div className="h-8 bg-surface-container rounded-lg flex-1" />
         </div>
       </div>
     </div>
   );
 }
 
-function LocationCard({ location }) {
-  const navigate = useNavigate();
+function TimeSlotGrid({ location, selectedDate, onSlotSelect }) {
+  const [slotAvailability, setSlotAvailability] = useState({});
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+
+  // Fetch slot availability for the selected date
+  useEffect(() => {
+    async function fetchSlotAvailability() {
+      setIsLoadingSlots(true);
+      try {
+        const slotsData = await parkingSlotsApi.getByLocation(location.id);
+        if (slotsData && slotsData.length > 0) {
+          // Group by vehicle type and check availability for each hour
+          const availability = {};
+          slotsData.forEach((slot) => {
+            const type = slot.vehicle_type_id || slot.vehicleTypeId || 1;
+            if (!availability[type]) {
+              availability[type] = { total: 0, available: 0 };
+            }
+            availability[type].total++;
+            const status = (
+              slot.current_status ||
+              slot.currentStatus ||
+              ""
+            ).toUpperCase();
+            if (status === "AVAILABLE") availability[type].available++;
+          });
+          setSlotAvailability(availability);
+        }
+      } catch (err) {
+        console.error("Failed to fetch slot availability:", err);
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    }
+    fetchSlotAvailability();
+  }, [location.id, selectedDate]);
+
+  const vehicleTypes = [
+    { id: 1, label: "Standard" },
+    { id: 2, label: "Compact" },
+    { id: 3, label: "EV" },
+    { id: 4, label: "Oversize" },
+  ];
+
+  const getMonochromeStyle = (isAvailable) => {
+    if (!isAvailable) {
+      return "bg-surface-container border-outline-variant/50 text-on-surface-variant/40 cursor-not-allowed";
+    }
+    return "bg-surface-container border-outline-variant/50 text-on-surface hover:bg-surface-container-high hover:border-primary/30 hover:text-primary transition-all";
+  };
+
+  return (
+    <div className="mt-4 space-y-4">
+      <h4 className="text-sm font-semibold text-on-surface-variant">
+        24-Hour Availability ({new Date(selectedDate).toLocaleDateString()})
+      </h4>
+
+      {isLoadingSlots ? (
+        <div className="grid grid-cols-6 gap-2">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-20 bg-surface-container rounded-xl animate-pulse"
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {vehicleTypes.map((type) => {
+            const avail = slotAvailability[type.id] || {
+              total: 0,
+              available: 0,
+            };
+            const isAvailable = avail.available > 0;
+
+            return (
+              <div
+                key={type.id}
+                className={`p-3 rounded-xl border transition-all ${
+                  isAvailable
+                    ? "border-outline-variant/50 hover:border-primary/30 cursor-pointer"
+                    : "border-outline-variant/30 opacity-50"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-primary/20" />
+                    <span className="text-on-surface font-medium">{type.label}</span>
+                    <span
+                      className={`text-xs font-semibold ${
+                        isAvailable ? "text-success" : "text-on-surface-variant/40"
+                      }`}
+                    >
+                      {isAvailable
+                        ? `${avail.available}/${avail.total} free`
+                        : "Full"}
+                    </span>
+                  </div>
+                  <span className="text-on-surface font-bold text-sm">
+                    ${location.pricePerHour}/hr
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-6 gap-1.5">
+                  {TIME_SLOTS.map((time, idx) => (
+                    <button
+                      key={time}
+                      onClick={() =>
+                        isAvailable &&
+                        onSlotSelect({
+                          location,
+                          vehicleType: type,
+                          time,
+                          date: selectedDate,
+                        })
+                      }
+                      disabled={!isAvailable}
+                      className={`h-10 rounded-lg text-xs font-medium ${getMonochromeStyle(
+                        isAvailable
+                      )}`}
+                      title={`${type.label} - ${time}`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LocationCard({ location, onSelect }) {
+  const [showTimeSlots, setShowTimeSlots] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  });
+
   const hasParkingSlots = location.hasParkingSlots;
   const hasAvailability = location.availableSlots > 0;
-  const isFullyOccupied = location.isFullyOccupied;
-  const availabilityPct = location.totalSlots
-    ? (location.availableSlots / location.totalSlots) * 100
-    : 0;
 
-  const availabilityColor =
-    availabilityPct > 50
-      ? "text-emerald-400"
-      : availabilityPct > 20
-        ? "text-amber-400"
-        : "text-red-400";
+  const handleSlotSelect = (slotData) => {
+    // Navigate to checkout with all necessary params
+    const params = new URLSearchParams({
+      location: slotData.location.id,
+      vehicle_type: slotData.vehicleType.id,
+      vehicle_type_label: slotData.vehicleType.label,
+      date: slotData.date,
+      time: slotData.time,
+      rate: location.pricePerHour,
+    });
+    onSelect(`/checkout?${params.toString()}`);
+  };
 
   return (
     <div
-      className={`group  border rounded-2xl overflow-hidden transition-all duration-300 flex flex-col ${
+      className={`luxury-card group overflow-hidden flex flex-col ${
         hasAvailability
-          ? "border-slate-700/50 hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/10 hover:-translate-y-0.5 cursor-pointer"
-          : "border-slate-700/30 opacity-60 cursor-not-allowed"
+          ? "hover:luxury-card-hover hover:-translate-y-0.5"
+          : "opacity-60"
       }`}
     >
-      <div className="relative h-44 bg-white-700/40 overflow-hidden">
+      <div className="relative h-44 bg-surface-container overflow-hidden">
         {location.image ? (
           <img
             src={location.image}
@@ -108,41 +262,41 @@ function LocationCard({ location }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Car className="w-12 h-12 text-slate-600" />
+            <Car className="w-12 h-12 text-on-surface-variant/30" />
           </div>
         )}
         <div className="absolute top-3 left-3 flex gap-2">
           {location.hasEVCharging && (
-            <span className="flex items-center gap-1 bg-emerald-500/90 backdrop-blur text-white text-xs font-semibold px-2 py-1 rounded-full">
+            <span className="badge-luxury badge-luxury-tertiary">
               <Zap className="w-3 h-3" /> EV
             </span>
           )}
           {location.isOpen24h && (
-            <span className="flex items-center gap-1 bg-violet-500/90 backdrop-blur text-white text-xs font-semibold px-2 py-1 rounded-full">
+            <span className="badge-luxury badge-luxury-primary">
               <Clock className="w-3 h-3" /> 24h
             </span>
           )}
         </div>
         {!hasAvailability && (
-          <div className="absolute inset-0 bg-white-900/70 flex items-center justify-center">
-            <span className="bg-red-500/90 text-white text-sm font-semibold px-4 py-2 rounded-full">
+          <div className="absolute inset-0 bg-on-surface/70 flex items-center justify-center">
+            <span className="bg-error text-on-error text-sm font-semibold px-4 py-2 rounded-full">
               {!hasParkingSlots
-                ? "No Parking Slots Configured"
+                ? "No Parking Slots"
                 : "Full — All Slots Reserved"}
             </span>
           </div>
         )}
-        <div className="absolute bottom-3 right-3 bg-white-900/80 backdrop-blur text-white text-sm font-bold px-3 py-1 rounded-xl">
+        <div className="absolute bottom-3 right-3 bg-on-surface/80 backdrop-blur text-on-background text-sm font-bold px-3 py-1 rounded-xl">
           ${location.pricePerHour}/hr
         </div>
       </div>
 
       <div className="p-5 flex flex-col flex-1 gap-3">
         <div>
-          <h3 className="text-white font-semibold text-base leading-tight line-clamp-1">
+          <h3 className="text-on-surface font-semibold text-base leading-tight line-clamp-1">
             {location.name}
           </h3>
-          <div className="flex items-center gap-1 text-slate-400 text-xs mt-1">
+          <div className="flex items-center gap-1 text-on-surface-variant text-xs mt-1">
             <MapPin className="w-3 h-3 shrink-0" />
             <span className="line-clamp-1">
               {location.address || location.city}
@@ -152,17 +306,17 @@ function LocationCard({ location }) {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-            <span className="text-white text-xs font-medium">
+            <Star className="w-3.5 h-3.5 text-warning fill-warning" />
+            <span className="text-on-surface text-xs font-medium">
               {location.rating}
             </span>
             {location.totalReviews > 0 && (
-              <span className="text-slate-500 text-xs">
+              <span className="text-on-surface-variant text-xs">
                 ({location.totalReviews})
               </span>
             )}
           </div>
-          <span className={`text-xs font-semibold ${availabilityColor}`}>
+          <span className={`text-xs font-semibold ${hasAvailability ? "text-success" : "text-on-surface-variant/40"}`}>
             {hasAvailability
               ? `${location.availableSlots} slots free`
               : "No slots"}
@@ -174,7 +328,7 @@ function LocationCard({ location }) {
             {location.features.slice(0, 3).map((f) => (
               <span
                 key={f}
-                className="text-xs text-slate-400 bg-white-700/50 px-2 py-0.5 rounded-full"
+                className="badge-luxury badge-luxury-neutral"
               >
                 {f}
               </span>
@@ -182,37 +336,70 @@ function LocationCard({ location }) {
           </div>
         )}
 
-        <button
-          onClick={() =>
-            hasAvailability && navigate(`/map?location=${location.id}`)
-          }
-          disabled={!hasAvailability}
-          className={`mt-auto w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-            hasAvailability
-              ? "bg-violet-600 hover:bg-violet-500 text-white shadow-sm shadow-violet-500/20"
-              : "bg-white-700/50 text-slate-500 cursor-not-allowed"
-          }`}
-        >
-          {hasAvailability ? "View & Book" : "Unavailable"}
-        </button>
+        {/* Date picker and time slots */}
+        <div className="space-y-3 border-t border-outline-variant/50 pt-4 mt-auto">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-on-surface-variant" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              className="input-luxury flex-1"
+            />
+            <button
+              onClick={() => setShowTimeSlots(!showTimeSlots)}
+              className="btn-luxury-icon"
+            >
+              {showTimeSlots ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+
+          {showTimeSlots && hasAvailability && (
+            <TimeSlotGrid
+              location={location}
+              selectedDate={selectedDate}
+              onSlotSelect={handleSlotSelect}
+            />
+          )}
+
+          {showTimeSlots && !hasAvailability && (
+            <p className="text-on-surface-variant text-sm text-center py-2">
+              No slots available at this location
+            </p>
+          )}
+
+          {!showTimeSlots && hasAvailability && (
+            <button
+              onClick={() => setShowTimeSlots(true)}
+              className="btn-luxury-primary w-full"
+            >
+              View Available Slots
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function LocationListCard({ location }) {
+function LocationListCard({ location, onSelect }) {
   const navigate = useNavigate();
   const hasAvailability = location.availableSlots > 0;
 
   return (
     <div
-      className={`flex items-center gap-5  border rounded-2xl p-4 transition-all duration-200 ${
+      className={`luxury-card transition-all duration-200 ${
         hasAvailability
-          ? "border-slate-700/50 hover:border-violet-500/40 hover:shadow-md hover:shadow-violet-500/10"
-          : "border-slate-700/30 opacity-60"
+          ? "hover:luxury-card-hover"
+          : "opacity-60"
       }`}
     >
-      <div className="w-20 h-20 rounded-xl bg-white-700/50 overflow-hidden shrink-0">
+      <div className="w-20 h-20 rounded-xl bg-surface-container overflow-hidden shrink-0">
         {location.image ? (
           <img
             src={location.image}
@@ -224,50 +411,51 @@ function LocationListCard({ location }) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Car className="w-8 h-8 text-slate-600" />
+            <Car className="w-8 h-8 text-on-surface-variant/30" />
           </div>
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="text-white font-semibold text-sm truncate">
+        <h3 className="text-on-surface font-semibold text-sm truncate">
           {location.name}
         </h3>
-        <p className="text-slate-400 text-xs mt-0.5 truncate">
+        <p className="text-on-surface-variant text-xs mt-0.5 truncate">
           {location.address || location.city}
         </p>
         <div className="flex items-center gap-3 mt-2">
-          <span className="text-violet-400 text-sm font-bold">
+          <span className="text-on-surface text-sm font-bold">
             ${location.pricePerHour}/hr
           </span>
           <span
-            className={`text-xs font-medium ${hasAvailability ? "text-emerald-400" : "text-red-400"}`}
+            className={`text-xs font-medium ${hasAvailability ? "text-success" : "text-on-surface-variant/40"}`}
           >
             {hasAvailability ? `${location.availableSlots} available` : "Full"}
           </span>
           <div className="flex items-center gap-1">
-            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-            <span className="text-slate-300 text-xs">{location.rating}</span>
+            <Star className="w-3 h-3 text-warning fill-warning" />
+            <span className="text-on-surface-variant text-xs">{location.rating}</span>
           </div>
         </div>
       </div>
       <button
         onClick={() =>
-          hasAvailability && navigate(`/map?location=${location.id}`)
+          hasAvailability && onSelect(`/map?location=${location.id}`)
         }
         disabled={!hasAvailability}
         className={`shrink-0 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
           hasAvailability
-            ? "bg-violet-600 hover:bg-violet-500 text-white"
-            : "bg-white-700/50 text-slate-500 cursor-not-allowed"
+            ? "btn-luxury-primary"
+            : "bg-surface-container text-on-surface-variant cursor-not-allowed"
         }`}
       >
-        {hasAvailability ? "Book" : "Full"}
+        {hasAvailability ? "View Map" : "Full"}
       </button>
     </div>
   );
 }
 
 export default function Explorer() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState({
     evCharging: false,
@@ -281,6 +469,13 @@ export default function Explorer() {
   const [locations, setLocations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const handleLocationSelect = useCallback(
+    (path) => {
+      navigate(path);
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     async function fetchData() {
@@ -365,18 +560,20 @@ export default function Explorer() {
   };
 
   return (
-    <div className="min-h-screen text-black p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen bg-surface text-on-surface p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Find Parking</h1>
-            <p className="text-slate-400 text-sm mt-1">
+            <h1 className="text-display-sm text-on-surface font-bold tracking-tight">
+              Find Parking
+            </h1>
+            <p className="text-body-md text-on-surface-variant mt-1">
               {isLoading
                 ? "Loading locations…"
                 : `${filtered.length} location${filtered.length !== 1 ? "s" : ""} found`}
             </p>
           </div>
-          <div className="flex items-center gap-2  border border-slate-700/50 rounded-xl p-1">
+          <div className="tabs-luxury">
             {[
               { mode: "grid", Icon: Grid3X3 },
               { mode: "list", Icon: List },
@@ -384,7 +581,9 @@ export default function Explorer() {
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`p-2 rounded-lg transition-all ${viewMode === mode ? "bg-violet-600 text-white" : "text-slate-400 hover:text-white"}`}
+                className={`tabs-luxury-trigger ${
+                  viewMode === mode ? "data-[state=active]" : ""
+                }`}
               >
                 <Icon className="w-4 h-4" />
               </button>
@@ -394,7 +593,7 @@ export default function Explorer() {
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
             <input
               type="text"
               value={searchQuery}
@@ -403,7 +602,7 @@ export default function Explorer() {
                 setCurrentPage(1);
               }}
               placeholder="Search by name or location…"
-              className="w-full  border border-slate-700/50 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
+              className="input-luxury pl-10"
             />
           </div>
           <select
@@ -412,7 +611,7 @@ export default function Explorer() {
               setSortBy(e.target.value);
               setCurrentPage(1);
             }}
-            className=" border border-slate-700/50 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-violet-500 cursor-pointer"
+            className="input-luxury cursor-pointer bg-surface-container"
           >
             <option value="availability">Sort: Most Available</option>
             <option value="price_asc">Sort: Price ↑</option>
@@ -442,22 +641,16 @@ export default function Explorer() {
             <button
               key={key}
               onClick={() => toggleFilter(key)}
-              className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all ${
-                selectedFilters[key]
-                  ? "bg-violet-600 border-violet-500 text-white"
-                  : " border-slate-700/50 text-slate-400 hover:border-violet-500/50 hover:text-white"
-              }`}
+              className={`badge-luxury ${selectedFilters[key] ? "badge-luxury-primary" : "badge-luxury-neutral"} transition-all`}
             >
-              {icon}
-              {label}
+              {icon} {label}
             </button>
           ))}
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 text-amber-400 text-sm">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            {error}
+          <div className="flex items-center gap-2 bg-warning-light border border-warning/30 rounded-2xl px-4 py-3 text-warning text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" /> {error}
           </div>
         )}
 
@@ -465,7 +658,7 @@ export default function Explorer() {
           <div
             className={
               viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+                ? "grid-luxury grid-luxury-3"
                 : "space-y-3"
             }
           >
@@ -474,9 +667,9 @@ export default function Explorer() {
             ))}
           </div>
         ) : paginated.length === 0 ? (
-          <div className="text-center py-20 text-slate-500">
+          <div className="text-center py-20 text-on-surface-variant">
             <Car className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">No locations match your filters</p>
+            <p className="text-headline-sm text-on-surface font-medium">No locations match your filters</p>
             <button
               onClick={() => {
                 setSearchQuery("");
@@ -487,21 +680,29 @@ export default function Explorer() {
                   open24h: false,
                 });
               }}
-              className="text-violet-400 text-sm mt-2 hover:underline"
+              className="btn-luxury-ghost mt-2"
             >
               Clear filters
             </button>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid-luxury grid-luxury-3">
             {paginated.map((loc) => (
-              <LocationCard key={loc.id} location={loc} />
+              <LocationCard
+                key={loc.id}
+                location={loc}
+                onSelect={handleLocationSelect}
+              />
             ))}
           </div>
         ) : (
           <div className="space-y-3">
             {paginated.map((loc) => (
-              <LocationListCard key={loc.id} location={loc} />
+              <LocationListCard
+                key={loc.id}
+                location={loc}
+                onSelect={handleLocationSelect}
+              />
             ))}
           </div>
         )}
@@ -511,7 +712,7 @@ export default function Explorer() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg  border border-slate-700/50 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="btn-luxury-icon disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -521,8 +722,8 @@ export default function Explorer() {
                 onClick={() => setCurrentPage(p)}
                 className={`w-9 h-9 rounded-lg text-sm font-medium transition-all ${
                   p === currentPage
-                    ? "bg-violet-600 text-white"
-                    : " border border-slate-700/50 text-slate-400 hover:text-white"
+                    ? "bg-primary text-on-primary"
+                    : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
                 }`}
               >
                 {p}
@@ -531,7 +732,7 @@ export default function Explorer() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg  border border-slate-700/50 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="btn-luxury-icon disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

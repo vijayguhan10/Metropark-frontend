@@ -49,7 +49,7 @@ async function request(method, path, { body, params } = {}) {
 
 export const apiClient = {
   get: (path, params) => request('GET', path, { params }),
-  post: (path, body) => request('POST', path, { body }),
+  post: (path, body, params) => request('POST', path, { body, params }),
   put: (path, body) => request('PUT', path, { body }),
   patch: (path, body) => request('PATCH', path, { body }),
   delete: (path) => request('DELETE', path),

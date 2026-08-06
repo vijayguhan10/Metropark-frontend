@@ -28,13 +28,27 @@ export function AuthProvider({ children }) {
     return sessionData;
   };
 
+  // Login with phone number - expects backend response with user_id, name, email
+  const loginWithPhone = (userData) => {
+    const sessionData = {
+      user_id: userData.user_id,
+      name: userData.name,
+      email: userData.email,
+      membership: 'Standard Member',
+      loggedInAt: new Date().toISOString(),
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+    setSession(sessionData);
+    return sessionData;
+  };
+
   const logout = () => {
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
   };
 
   return (
-    <AuthContext.Provider value={{ session, login, logout, isAuthenticated: !!session }}>
+    <AuthContext.Provider value={{ session, login, loginWithPhone, logout, isAuthenticated: !!session }}>
       {children}
     </AuthContext.Provider>
   );
