@@ -93,7 +93,6 @@ function Legend() {
   );
 }
 
-// API may return camelCase or snake_case — normalize to snake_case internally
 function normalizeSlot(raw, fallbackLocationId) {
   const status = (raw.current_status ?? raw.currentStatus ?? 'AVAILABLE').toString().toUpperCase();
   return {
@@ -142,7 +141,6 @@ export default function SlotMap() {
             : mockLoc || { id: locationId, name: 'Parking Location', address: '', pricePerHour: 5 }
         );
       } catch {
-        // Fall back to mock floor plan data
         const mockLoc = mockLocations.find((l) => l.id === locationId) || mockLocations[0];
         setLocation(mockLoc);
         const plan = mockFloorPlans[mockLoc.id] || mockFloorPlans[mockLocations[0].id];
@@ -176,7 +174,6 @@ export default function SlotMap() {
     );
   };
 
-  // Group slots by section prefix (e.g. "A-101" → section "A")
   const sections = slots.reduce((acc, slot) => {
     const prefix = slot._section || slot.display_code?.split('-')[0] || 'Main';
     if (!acc[prefix]) acc[prefix] = [];

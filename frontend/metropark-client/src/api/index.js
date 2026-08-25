@@ -8,5 +8,6 @@ export { paymentsApi } from './services/paymentsApi';
 export { paymentMethodsApi } from './services/paymentMethodsApi';
 export { vehiclesApi } from './services/vehiclesApi';
 export { usersApi } from './services/usersApi';
+export { walletApi } from './services/walletApi';
 export { gatesApi } from './services/gatesApi';
 export { toLocalDateTime } from './utils';

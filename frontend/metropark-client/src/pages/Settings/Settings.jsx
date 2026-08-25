@@ -17,7 +17,6 @@ export default function Settings() {
 
   const handleSave = () => {
     console.log('Saving settings:', formData);
-    // In a real app, this would call an API
     alert('Settings saved successfully!');
   };
 

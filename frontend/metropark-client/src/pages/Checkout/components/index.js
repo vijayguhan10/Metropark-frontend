@@ -10,5 +10,6 @@ export { default as ApplePayForm } from './ApplePayForm';
 export { default as SavedPaymentMethods } from './SavedPaymentMethods';
 export { default as SuccessModal } from './SuccessModal';
 export { default as ProcessingModal } from './ProcessingModal';
+export { default as WalletModal } from './WalletModal';
 export { default as Timer } from './Timer';
 export { default as TimePicker } from './TimePicker';

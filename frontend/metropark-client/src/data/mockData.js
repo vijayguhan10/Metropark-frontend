@@ -1,4 +1,3 @@
-// Mock Data for Metropark Application
 
 export const user = {
   id: 'user_001',

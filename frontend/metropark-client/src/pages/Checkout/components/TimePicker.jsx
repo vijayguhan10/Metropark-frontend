@@ -32,7 +32,6 @@ const TimePicker = ({
     const newValue = e.target.value;
     onChange(newValue);
     if (error) {
-      // Clear error on change - parent will handle validation
     }
   };
 
@@ -42,7 +41,6 @@ const TimePicker = ({
   };
 
   const handleBlur = () => {
-    // Delay to allow picker clicks
     setTimeout(() => {
       setShowPicker(false);
       onBlur?.();

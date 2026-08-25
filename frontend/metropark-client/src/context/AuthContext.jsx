@@ -14,7 +14,6 @@ export function AuthProvider({ children }) {
     }
   });
 
-  // backendUserId: the userId string assigned by the server (from POST /api/users response)
   const login = ({ email, name, backendUserId }) => {
     const sessionData = {
       user_id: backendUserId || email,   // prefer server-assigned id
@@ -28,7 +27,6 @@ export function AuthProvider({ children }) {
     return sessionData;
   };
 
-  // Login with phone number - expects backend response with user_id, name, email
   const loginWithPhone = (userData) => {
     const sessionData = {
       user_id: userData.user_id,

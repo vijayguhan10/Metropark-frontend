@@ -13,10 +13,10 @@ export const useCardValidation = () => {
 
   const validateCard = useCallback(() => {
     const errors = {};
-    const number = cardFormData.number.replace(/\s/g, '');
-    const expiry = cardFormData.expiry;
-    const cvc = cardFormData.cvc;
-    const name = cardFormData.name.trim();
+    const number = (cardFormData.number || '').replace(/\s/g, '');
+    const expiry = cardFormData.expiry || '';
+    const cvc = cardFormData.cvc || '';
+    const name = (cardFormData.name || '').trim();
 
     if (!number || number.length < 15) {
       errors.number = 'Invalid card number';
@@ -43,10 +43,10 @@ export const useCardValidation = () => {
   }, [cardFormData]);
 
   const handleCardChange = (field, value) => {
-    let formattedValue = value;
-    if (field === 'number') formattedValue = formatCardNumber(value);
-    if (field === 'expiry') formattedValue = formatExpiry(value);
-    if (field === 'cvc') formattedValue = formatCVC(value);
+    let formattedValue = value || '';
+    if (field === 'number') formattedValue = formatCardNumber(value || '');
+    if (field === 'expiry') formattedValue = formatExpiry(value || '');
+    if (field === 'cvc') formattedValue = formatCVC(value || '');
     
     setCardFormData(prev => ({ ...prev, [field]: formattedValue }));
     if (cardErrors[field]) {

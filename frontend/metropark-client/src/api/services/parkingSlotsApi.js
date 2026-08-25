@@ -8,4 +8,11 @@ export const parkingSlotsApi = {
   create: (data) => apiClient.post(ENDPOINTS.PARKING_SLOTS, data),
   update: (id, data) => apiClient.put(`${ENDPOINTS.PARKING_SLOTS}/${id}`, data),
   remove: (id) => apiClient.delete(`${ENDPOINTS.PARKING_SLOTS}/${id}`),
+  
+  checkAvailability: (locationId, { fromDate, toDate }) => 
+    apiClient.post(`${ENDPOINTS.PARKING_SLOTS}/availability`, {
+      locationID: locationId,
+      fromDate,
+      toDate,
+    }),
 };

@@ -22,11 +22,8 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState("login"); // 'login' | 'signup'
 
-  // Phone number validation regex - supports international formats
   const validatePhone = (phone) => {
-    // Remove all non-digit characters except +
     const cleaned = phone.replace(/[^\d+]/g, '');
-    // Check if it starts with + and has 10-15 digits, or just 10-15 digits
     return /^\+?\d{10,15}$/.test(cleaned);
   };
 
@@ -34,14 +31,12 @@ export default function Login() {
     const errs = {};
     
     if (mode === "login") {
-      // Login only requires phone number
       if (!form.loginPhone.trim()) {
         errs.loginPhone = "Phone number is required";
       } else if (!validatePhone(form.loginPhone)) {
         errs.loginPhone = "Please enter a valid phone number (10-15 digits)";
       }
     } else {
-      // Signup requires all fields
       if (!form.name.trim()) errs.name = "Full name is required";
       if (!form.email.trim()) {
         errs.email = "Email address is required";
@@ -75,14 +70,11 @@ export default function Login() {
     setIsLoading(true);
     try {
       if (mode === "login") {
-        // Login with phone number only - backend returns user ID as plain text
         const loginResponse = await usersApi.login(form.loginPhone.trim());
         
-        // Handle plain text response (_raw) or JSON
         const backendUserId = loginResponse?.user_id ?? loginResponse?.userId ?? loginResponse?.id ?? loginResponse?._raw?.trim();
         if (!backendUserId) throw new Error("Server did not return a valid user ID.");
         
-        // Fetch full user details using the returned user ID
         const userData = await usersApi.getById(backendUserId);
         
         loginWithPhone({
@@ -91,7 +83,6 @@ export default function Login() {
           email: userData.email,
         });
       } else {
-        // Signup with full details
         const newUser = await usersApi.create({
           name: form.name.trim(),
           email: form.email.trim(),
@@ -101,7 +92,6 @@ export default function Login() {
           createdAt: toLocalDateTime(),
         });
         
-        // Handle JSON object or plain-text response (_raw)
         const backendUserId = newUser?.userId ?? newUser?.user_id ?? newUser?.id ?? newUser?._raw?.trim() ?? null;
         if (!backendUserId) throw new Error("Server did not return a userId.");
         
@@ -124,9 +114,7 @@ export default function Login() {
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  // Format phone number as user types
   const formatPhoneInput = (value) => {
-    // Allow only digits, spaces, dashes, parentheses, and +
     return value.replace(/[^\d\s\-\(\)\+]/g, '');
   };
 

@@ -1,7 +1,6 @@
 import { apiClient } from '../client';
 import { ENDPOINTS } from '../endpoints';
 
-// reservations.user_id is an integer column in the DB
 const toIntUserId = (uid) => {
   const n = parseInt(uid, 10);
   return Number.isFinite(n) ? n : uid;

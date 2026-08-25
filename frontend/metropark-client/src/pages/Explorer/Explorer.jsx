@@ -16,23 +16,15 @@ import {
   Calendar,
   ChevronUp,
   ChevronDown,
+  Map,
+  Loader2,
+  CheckCircle,
+  ArrowRight,
 } from "lucide-react";
 import { parkingLocations as mockLocations } from "../../data/mockData";
 import { locationsApi, parkingSlotsApi } from "../../api";
 
 const ITEMS_PER_PAGE = 9;
-
-// Generate 24-hour time slots
-const generateTimeSlots = () => {
-  const slots = [];
-  for (let h = 0; h < 24; h++) {
-    const hour = h.toString().padStart(2, "0");
-    slots.push(`${hour}:00`);
-  }
-  return slots;
-};
-
-const TIME_SLOTS = generateTimeSlots();
 
 function enrichLocation(apiLoc, slotCounts) {
   const locId = apiLoc.location_id || apiLoc.locationId;
@@ -84,163 +76,326 @@ function SkeletonCard() {
   );
 }
 
-function TimeSlotGrid({ location, selectedDate, onSlotSelect }) {
-  const [slotAvailability, setSlotAvailability] = useState({});
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
-
-  // Fetch slot availability for the selected date
-  useEffect(() => {
-    async function fetchSlotAvailability() {
-      setIsLoadingSlots(true);
-      try {
-        const slotsData = await parkingSlotsApi.getByLocation(location.id);
-        if (slotsData && slotsData.length > 0) {
-          // Group by vehicle type and check availability for each hour
-          const availability = {};
-          slotsData.forEach((slot) => {
-            const type = slot.vehicle_type_id || slot.vehicleTypeId || 1;
-            if (!availability[type]) {
-              availability[type] = { total: 0, available: 0 };
-            }
-            availability[type].total++;
-            const status = (
-              slot.current_status ||
-              slot.currentStatus ||
-              ""
-            ).toUpperCase();
-            if (status === "AVAILABLE") availability[type].available++;
-          });
-          setSlotAvailability(availability);
-        }
-      } catch (err) {
-        console.error("Failed to fetch slot availability:", err);
-      } finally {
-        setIsLoadingSlots(false);
-      }
-    }
-    fetchSlotAvailability();
-  }, [location.id, selectedDate]);
-
-  const vehicleTypes = [
-    { id: 1, label: "Standard" },
-    { id: 2, label: "Compact" },
-    { id: 3, label: "EV" },
-    { id: 4, label: "Oversize" },
-  ];
-
-  const getMonochromeStyle = (isAvailable) => {
-    if (!isAvailable) {
-      return "bg-surface-container border-outline-variant/50 text-on-surface-variant/40 cursor-not-allowed";
-    }
-    return "bg-surface-container border-outline-variant/50 text-on-surface hover:bg-surface-container-high hover:border-primary/30 hover:text-primary transition-all";
+function TimeRangeCard({ 
+  startTime, 
+  endTime, 
+  isSelected, 
+  onSelect, 
+  slotId,
+  pricePerHour 
+}) {
+  const formatTime = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+  
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString();
   };
 
+  const durationHours = (new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60);
+  const estimatedCost = (durationHours * pricePerHour).toFixed(2);
+
   return (
-    <div className="mt-4 space-y-4">
-      <h4 className="text-sm font-semibold text-on-surface-variant">
-        24-Hour Availability ({new Date(selectedDate).toLocaleDateString()})
-      </h4>
-
-      {isLoadingSlots ? (
-        <div className="grid grid-cols-6 gap-2">
-          {Array.from({ length: 24 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-20 bg-surface-container rounded-xl animate-pulse"
-            />
-          ))}
+    <button
+      onClick={() => onSelect(slotId, startTime, endTime)}
+      className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+        isSelected
+          ? 'bg-primary-light border-primary'
+          : 'bg-surface-container border-outline-variant/50 hover:border-primary/50 hover:bg-surface-container-high'
+      }`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary-light rounded-xl flex items-center justify-center">
+            <Car className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <div className="font-semibold text-on-surface">
+              {formatDate(startTime)} • {formatTime(startTime)} – {formatTime(endTime)}
+            </div>
+            <div className="text-xs text-on-surface-variant">
+              {durationHours % 1 === 0 ? `${durationHours} hr` : `${durationHours.toFixed(1)} hrs`}
+            </div>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-3">
-          {vehicleTypes.map((type) => {
-            const avail = slotAvailability[type.id] || {
-              total: 0,
-              available: 0,
-            };
-            const isAvailable = avail.available > 0;
+        <div className="text-right">
+          <div className="font-semibold text-on-surface">${estimatedCost}</div>
+          <div className="text-xs text-on-surface-variant">Estimated</div>
+          {isSelected && (
+            <CheckCircle className="w-5 h-5 text-success mx-auto mt-1" />
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
 
+function SlotDisplay({ 
+  location, 
+  fromDate, 
+  toDate, 
+  availableSlots, 
+  selectedSlotId, 
+  selectedTiming,
+  overlappingTimings, 
+  isLoading, 
+  onProceed,
+  onTimingSelect
+}) {
+  const formatTime = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="luxury-card p-8">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <span className="ml-3 text-on-surface-variant">Checking availability...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const userStart = new Date(fromDate);
+  const userEnd = new Date(toDate);
+
+  const validTimeRanges = availableSlots.map((slot) => {
+    const slotId = typeof slot === 'object' ? slot.slotId || slot.id : slot;
+    const slotAvailableFrom = typeof slot === 'object' && slot.availableFrom 
+      ? new Date(slot.availableFrom) 
+      : userStart;
+    const slotAvailableTo = typeof slot === 'object' && slot.availableTo 
+      ? new Date(slot.availableTo) 
+      : userEnd;
+    
+    const actualStart = slotAvailableFrom > userStart ? slotAvailableFrom : userStart;
+    const actualEnd = slotAvailableTo < userEnd ? slotAvailableTo : userEnd;
+    const durationMs = actualEnd - actualStart;
+    const durationHours = durationMs / (1000 * 60 * 60);
+    
+    return {
+      slotId,
+      startTime: actualStart.toISOString(),
+      endTime: actualEnd.toISOString(),
+      durationHours,
+      isValid: durationHours >= 0.5
+    };
+  }).filter(r => r.isValid);
+
+  const hasValidSlots = validTimeRanges.length > 0;
+
+  if (!hasValidSlots) {
+    return (
+      <div className="luxury-card p-8 text-center">
+        <Car className="w-12 h-12 mx-auto mb-3 text-on-surface-variant/30" />
+        <p className="text-on-surface-variant">No slots are available for the selected time period</p>
+      </div>
+    );
+  }
+
+  const isUserTimingOverlapping = () => {
+    if (!overlappingTimings || overlappingTimings.length === 0) return false;
+    return overlappingTimings.some(ot => {
+      const otStart = new Date(ot.from);
+      const otEnd = new Date(ot.to);
+      return userStart < otEnd && userEnd > otStart;
+    });
+  };
+
+  const userTimingOverlaps = isUserTimingOverlapping();
+
+  return (
+    <div className="luxury-card overflow-hidden">
+      <div className="p-4 border-b border-outline-variant/50 bg-surface-container-low">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Map className="w-5 h-5 text-primary" />
+            <h3 className="text-title-md font-semibold text-on-surface">Available Timings</h3>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-on-surface-variant">
+            <span>Entry: {formatDate(fromDate)} {formatTime(fromDate)}</span>
+            <span>Exit: {formatDate(toDate)} {formatTime(toDate)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Show "Overlapping" only when user's selected time period has no available slots */}
+      {userTimingOverlaps && !hasValidSlots && (
+        <div className="p-4 bg-warning-light border-b border-warning/30">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-warning shrink-0" />
+            <span className="text-warning font-medium text-sm">Overlapping</span>
+          </div>
+        </div>
+      )}
+
+      <div className="p-4">
+        <p className="text-sm text-on-surface-variant mb-3">
+          Select an available timing for your parking session
+        </p>
+        
+        <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
+          {validTimeRanges.map((range) => {
+            const isSelected = selectedSlotId === range.slotId;
+            
             return (
-              <div
-                key={type.id}
-                className={`p-3 rounded-xl border transition-all ${
-                  isAvailable
-                    ? "border-outline-variant/50 hover:border-primary/30 cursor-pointer"
-                    : "border-outline-variant/30 opacity-50"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-primary/20" />
-                    <span className="text-on-surface font-medium">{type.label}</span>
-                    <span
-                      className={`text-xs font-semibold ${
-                        isAvailable ? "text-success" : "text-on-surface-variant/40"
-                      }`}
-                    >
-                      {isAvailable
-                        ? `${avail.available}/${avail.total} free`
-                        : "Full"}
-                    </span>
-                  </div>
-                  <span className="text-on-surface font-bold text-sm">
-                    ${location.pricePerHour}/hr
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-6 gap-1.5">
-                  {TIME_SLOTS.map((time, idx) => (
-                    <button
-                      key={time}
-                      onClick={() =>
-                        isAvailable &&
-                        onSlotSelect({
-                          location,
-                          vehicleType: type,
-                          time,
-                          date: selectedDate,
-                        })
-                      }
-                      disabled={!isAvailable}
-                      className={`h-10 rounded-lg text-xs font-medium ${getMonochromeStyle(
-                        isAvailable
-                      )}`}
-                      title={`${type.label} - ${time}`}
-                    >
-                      {time}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <TimeRangeCard
+                key={range.slotId}
+                startTime={range.startTime}
+                endTime={range.endTime}
+                isSelected={isSelected}
+                onSelect={onTimingSelect}
+                slotId={range.slotId}
+                pricePerHour={location.pricePerHour}
+              />
             );
           })}
         </div>
-      )}
+
+        <button
+          onClick={onProceed}
+          disabled={!selectedSlotId}
+          className={`btn-luxury-primary w-full py-3 text-lg ${!selectedSlotId ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <ArrowRight className="w-5 h-5" />
+          <span>
+            {selectedSlotId 
+              ? 'Proceed to Checkout' 
+              : 'Select a timing to proceed'}
+          </span>
+        </button>
+      </div>
     </div>
   );
 }
 
 function LocationCard({ location, onSelect }) {
-  const [showTimeSlots, setShowTimeSlots] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split("T")[0];
+  const [showSlotSelector, setShowSlotSelector] = useState(false);
+  const [fromDate, setFromDate] = useState(() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 30); // Start from 30 mins from now
+    return now.toISOString().slice(0, 16);
   });
+  const [toDate, setToDate] = useState(() => {
+    const now = new Date();
+    now.setHours(now.getHours() + 2); // Default 2 hours
+    return now.toISOString().slice(0, 16);
+  });
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [overlappingTimings, setOverlappingTimings] = useState([]);
+  const [selectedSlotId, setSelectedSlotId] = useState(null);
+  const [selectedTiming, setSelectedTiming] = useState(null); // { startTime, endTime }
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState(null);
+  const [lastCheckedFromDate, setLastCheckedFromDate] = useState(null);
+  const [lastCheckedToDate, setLastCheckedToDate] = useState(null);
 
   const hasParkingSlots = location.hasParkingSlots;
   const hasAvailability = location.availableSlots > 0;
 
-  const handleSlotSelect = (slotData) => {
-    // Navigate to checkout with all necessary params
+  const haveDatesChanged = () => {
+    return lastCheckedFromDate !== fromDate || lastCheckedToDate !== toDate;
+  };
+
+  const checkAvailability = async () => {
+    if (!fromDate || !toDate) return;
+    
+    if (new Date(fromDate) >= new Date(toDate)) {
+      setAvailabilityError("Exit time must be after entry time");
+      return;
+    }
+    
+    setIsCheckingAvailability(true);
+    setAvailabilityError(null);
+    setAvailableSlots([]);
+    setOverlappingTimings([]);
+    setSelectedSlotId(null);
+    setSelectedTiming(null);
+
+    try {
+      const response = await parkingSlotsApi.checkAvailability(location.id, {
+        fromDate,
+        toDate,
+      });
+      
+      if (response && response.availableSlotIds) {
+        const slots = response.availableSlotIds;
+        setAvailableSlots(slots);
+        setOverlappingTimings(response.overlappingTimings || []);
+      } else if (Array.isArray(response)) {
+        setAvailableSlots(response);
+      } else if (response && response.slots) {
+        setAvailableSlots(response.slots);
+        setOverlappingTimings(response.overlappingTimings || []);
+      }
+      
+      setLastCheckedFromDate(fromDate);
+      setLastCheckedToDate(toDate);
+      
+    } catch (err) {
+      console.error("Failed to check availability:", err);
+      setAvailabilityError("Could not check availability. Please try again.");
+      const mockSlots = [
+        { slotId: 101, availableFrom: fromDate, availableTo: toDate },
+        { slotId: 102, availableFrom: fromDate, availableTo: toDate },
+        { slotId: 105, availableFrom: fromDate, availableTo: toDate },
+        { slotId: 108, availableFrom: fromDate, availableTo: toDate },
+      ];
+      setAvailableSlots(mockSlots);
+      setOverlappingTimings([
+        { from: "2026-08-11T10:30:00", to: "2026-08-11T11:30:00" },
+        { from: "2026-08-11T12:00:00", to: "2026-08-11T13:30:00" },
+      ]);
+      setLastCheckedFromDate(fromDate);
+      setLastCheckedToDate(toDate);
+    } finally {
+      setIsCheckingAvailability(false);
+    }
+  };
+
+  const handleCheckClick = () => {
+    if (!showSlotSelector) {
+      setShowSlotSelector(true);
+      setTimeout(checkAvailability, 100);
+    } else {
+      checkAvailability();
+    }
+  };
+
+  const handleTimingSelect = (slotId, startTime, endTime) => {
+    setSelectedSlotId(slotId);
+    setSelectedTiming({ startTime, endTime });
+  };
+
+  const handleProceed = () => {
+    if (!selectedSlotId || !selectedTiming) return;
+    
     const params = new URLSearchParams({
-      location: slotData.location.id,
-      vehicle_type: slotData.vehicleType.id,
-      vehicle_type_label: slotData.vehicleType.label,
-      date: slotData.date,
-      time: slotData.time,
+      location: location.id,
+      slotId: selectedSlotId,
+      fromDate: selectedTiming.startTime,
+      toDate: selectedTiming.endTime,
       rate: location.pricePerHour,
     });
     onSelect(`/checkout?${params.toString()}`);
   };
+
+  useEffect(() => {
+    if (showSlotSelector && haveDatesChanged()) {
+      setSelectedSlotId(null);
+      setSelectedTiming(null);
+      setTimeout(checkAvailability, 300);
+    }
+  }, [fromDate, toDate, showSlotSelector]);
 
   return (
     <div
@@ -336,50 +491,71 @@ function LocationCard({ location, onSelect }) {
           </div>
         )}
 
-        {/* Date picker and time slots */}
+        {/* Date/Time picker and slot selection */}
         <div className="space-y-3 border-t border-outline-variant/50 pt-4 mt-auto">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-on-surface-variant" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="input-luxury flex-1"
-            />
-            <button
-              onClick={() => setShowTimeSlots(!showTimeSlots)}
-              className="btn-luxury-icon"
-            >
-              {showTimeSlots ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="input-luxury-label">Entry Date & Time</label>
+              <input
+                type="datetime-local"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
+                className="input-luxury"
+              />
+            </div>
+            <div>
+              <label className="input-luxury-label">Exit Date & Time</label>
+              <input
+                type="datetime-local"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                min={fromDate}
+                className="input-luxury"
+              />
+            </div>
           </div>
 
-          {showTimeSlots && hasAvailability && (
-            <TimeSlotGrid
+          <button
+            onClick={handleCheckClick}
+            disabled={isCheckingAvailability}
+            className="btn-luxury-primary w-full"
+          >
+            {isCheckingAvailability ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Checking Availability...</span>
+              </>
+            ) : showSlotSelector ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Re-check Availability</span>
+              </>
+            ) : (
+              <>
+                <Map className="w-4 h-4" />
+                <span>Check Availability</span>
+              </>
+            )}
+          </button>
+
+          {availabilityError && (
+            <p className="text-error text-sm text-center">{availabilityError}</p>
+          )}
+
+          {showSlotSelector && (
+            <SlotDisplay
               location={location}
-              selectedDate={selectedDate}
-              onSlotSelect={handleSlotSelect}
+              fromDate={fromDate}
+              toDate={toDate}
+              availableSlots={availableSlots}
+              selectedSlotId={selectedSlotId}
+              selectedTiming={selectedTiming}
+              overlappingTimings={overlappingTimings}
+              isLoading={isCheckingAvailability}
+              onProceed={handleProceed}
+              onTimingSelect={handleTimingSelect}
             />
-          )}
-
-          {showTimeSlots && !hasAvailability && (
-            <p className="text-on-surface-variant text-sm text-center py-2">
-              No slots available at this location
-            </p>
-          )}
-
-          {!showTimeSlots && hasAvailability && (
-            <button
-              onClick={() => setShowTimeSlots(true)}
-              className="btn-luxury-primary w-full"
-            >
-              View Available Slots
-            </button>
           )}
         </div>
       </div>

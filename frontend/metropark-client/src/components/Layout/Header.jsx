@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Search,
   Bell,
-  Settings,
   Menu,
   ChevronDown,
   User,
@@ -34,7 +33,6 @@ export default function Header() {
     navigate('/login', { replace: true });
   };
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
@@ -52,7 +50,6 @@ export default function Header() {
   const headerLinks = [
     { name: 'Explorer', href: '/explorer' },
     { name: 'My Bookings', href: '/reservations' },
-    { name: 'Support', href: '/support' },
   ];
 
   return (
@@ -161,11 +158,6 @@ export default function Header() {
                 )}
               </div>
 
-              {/* Settings */}
-              <button className="btn-luxury-icon" aria-label="Settings">
-                <Settings className="w-5 h-5" />
-              </button>
-
               {/* Profile Menu */}
               <div className="relative" ref={profileMenuRef}>
                 <button
@@ -195,14 +187,6 @@ export default function Header() {
                     >
                       <User className="w-5 h-5" />
                       <span>Profile</span>
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="dropdown-luxury-item"
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      <Settings className="w-5 h-5" />
-                      <span>Settings</span>
                     </Link>
                     <div className="divider-luxury mx-2" />
                     <button

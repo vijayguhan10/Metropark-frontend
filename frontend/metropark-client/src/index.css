@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  /* Luxury Professional Color Palette - Refined, Sophisticated, Muted Tones */
   --color-primary: #7C5CFF;
   --color-primary-hover: #6B46E8;
   --color-primary-light: #F0EBFF;
@@ -23,7 +22,6 @@
   --color-on-tertiary: #FFFFFF;
   --color-on-tertiary-container: #4A1A6B;
 
-  /* Light Violet - Luxury Accent Color */
   --color-violet: #A855F7;
   --color-violet-hover: #9333EA;
   --color-violet-light: #F5F0FF;
@@ -50,7 +48,6 @@
   --color-on-error: #FFFFFF;
   --color-on-error-container: #B71C1C;
 
-  /* Surface Colors - Luxury Neutral Palette */
   --color-surface: #FAFAFA;
   --color-surface-bright: #FFFFFF;
   --color-surface-dim: #F0F0F0;
@@ -74,7 +71,6 @@
 
   --color-surface-tint: #2D3A4A;
 
-  /* Luxury Typography - Using Raleway for elegant professional look */
   --font-family-sans: "Raleway", system-ui, -apple-system, sans-serif;
   --font-family-display: "Raleway", system-ui, -apple-system, sans-serif;
   --font-family-mono: "JetBrains Mono", monospace;
@@ -136,7 +132,6 @@
   --letter-spacing-label-md: 0.02em;
   --letter-spacing-label-sm: 0.03em;
 
-  /* Luxury Spacing Scale */
   --space-0: 0;
   --space-1: 4px;
   --space-2: 8px;
@@ -154,7 +149,6 @@
   --space-20: 80px;
   --space-24: 96px;
 
-  /* Luxury Border Radius */
   --radius-none: 0;
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -164,7 +158,6 @@
   --radius-3xl: 24px;
   --radius-full: 9999px;
 
-  /* Luxury Shadows - Subtle, Layered, Professional */
   --shadow-xs: 0 1px 2px 0 rgb(26 26 46 / 0.03);
   --shadow-sm: 0 1px 3px 0 rgb(26 26 46 / 0.04), 0 1px 2px -1px rgb(26 26 46 / 0.04);
   --shadow-md: 0 4px 6px -1px rgb(26 26 46 / 0.05), 0 2px 4px -2px rgb(26 26 46 / 0.05);
@@ -175,13 +168,11 @@
   --shadow-luxury: 0 1px 4px 0 rgb(26 26 46 / 0.04), 0 4px 12px 0 rgb(26 26 46 / 0.05);
   --shadow-luxury-lg: 0 2px 8px 0 rgb(26 26 46 / 0.05), 0 8px 24px 0 rgb(26 26 46 / 0.06);
 
-  /* Transitions - Smooth, Luxury Feel */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slower: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Z-Index Scale */
   --z-hide: -1;
   --z-base: 0;
   --z-dropdown: 100;
@@ -194,9 +185,7 @@
 }
 
 @layer base {
-  *,
-  *::before,
-  *::after {
+  * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -218,7 +207,6 @@
     min-height: 100vh;
   }
 
-  /* Luxury Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -242,13 +230,11 @@
     background: var(--color-surface-container-low);
   }
 
-  /* Selection */
   ::selection {
     background-color: var(--color-primary-container);
     color: var(--color-on-primary-container);
   }
 
-  /* Focus Visible */
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
@@ -256,7 +242,6 @@
 
 }
 
-/* Typography Utilities - Using @utility for Tailwind v4 compatibility */
 @utility text-display-xl {
   font-size: var(--font-size-display-xl);
   line-height: var(--line-height-display-xl);
@@ -369,7 +354,6 @@
   letter-spacing: var(--letter-spacing-label-sm);
 }
 
-/* Luxury Card Component - Using @utility for Tailwind v4 compatibility */
 @utility luxury-card {
   @apply bg-surface-container-lowest border border-outline-variant/50 rounded-2xl shadow-luxury transition-all duration-300;
 }
@@ -390,7 +374,6 @@
   @apply border-primary/30 shadow-md;
 }
 
-/* Luxury Button Variants */
 @utility btn-luxury-primary {
   @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-label-lg font-semibold rounded-xl
          bg-primary text-on-primary shadow-luxury
@@ -452,7 +435,6 @@
          disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-/* Luxury Input */
 @utility input-luxury {
   @apply w-full px-4 py-3.5 text-body-md bg-surface-container-lowest border border-outline-variant/50 rounded-xl
          placeholder:text-on-surface-variant/40
@@ -482,7 +464,6 @@
   @apply mt-1.5 text-label-sm text-error;
 }
 
-/* Luxury Badge */
 @utility badge-luxury {
   @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-label-sm font-medium transition-colors;
 }
@@ -519,7 +500,6 @@
   @apply bg-transparent border-2 text-on-surface-variant;
 }
 
-/* Luxury Avatar */
 @utility avatar-luxury {
   @apply inline-flex items-center justify-center bg-primary-light text-primary font-semibold rounded-full overflow-hidden;
 }
@@ -529,7 +509,6 @@
 @utility avatar-luxury-lg { @apply w-12 h-12 text-body-md; }
 @utility avatar-luxury-xl { @apply w-16 h-16 text-headline-sm; }
 
-/* Luxury Divider */
 @utility divider-luxury {
   @apply h-px bg-outline-variant/50 border-0;
 }
@@ -538,7 +517,6 @@
   @apply w-px h-full bg-outline-variant/50 border-0;
 }
 
-/* Luxury Tooltip */
 @utility tooltip-luxury {
   @apply absolute z-[var(--z-tooltip)] px-3 py-2 text-label-sm text-on-surface bg-inverse-surface rounded-lg shadow-luxury-lg
          opacity-0 invisible transition-all duration-200 pointer-events-none;
@@ -548,7 +526,6 @@
   @apply opacity-100 visible;
 }
 
-/* Luxury Dropdown */
 @utility dropdown-luxury {
   @apply absolute z-[var(--z-dropdown)] min-w-[200px] bg-surface-container-lowest border border-outline-variant/50 rounded-2xl shadow-luxury-lg
          overflow-hidden animate-fade-in-up;
@@ -563,7 +540,6 @@
   @apply h-px bg-outline-variant/50 my-1;
 }
 
-/* Luxury Table */
 @utility table-luxury {
   @apply w-full border-collapse text-body-sm;
 }
@@ -585,7 +561,6 @@
   @apply border-b-0;
 }
 
-/* Luxury Tabs */
 @utility tabs-luxury {
   @apply flex gap-1 bg-surface-container-low rounded-xl p-1;
 }
@@ -597,7 +572,6 @@
          data-[state=active]:bg-surface-container-lowest data-[state=active]:text-primary data-[state=active]:shadow-md;
 }
 
-/* Luxury Accordion */
 @utility accordion-luxury {
   @apply border border-outline-variant/50 rounded-2xl overflow-hidden bg-surface-container-lowest;
 }
@@ -617,7 +591,6 @@
   @apply px-6 pb-4 text-body-md text-on-surface-variant animate-accordion-down;
 }
 
-/* Luxury Modal */
 @utility modal-luxury-overlay {
   @apply fixed inset-0 z-[var(--z-modal-backdrop)] bg-black/30 backdrop-blur-sm animate-fade-in;
 }
@@ -628,7 +601,6 @@
          max-h-[90vh] max-w-[90vw] w-full animate-fade-in-up;
 }
 
-/* Luxury Toast */
 @utility toast-luxury {
   @apply fixed bottom-6 right-6 z-[var(--z-tooltip)] flex items-center gap-3 px-5 py-4
          bg-inverse-surface text-inverse-on-surface rounded-2xl shadow-luxury-lg
@@ -651,12 +623,10 @@
   @apply bg-primary text-on-primary;
 }
 
-/* Luxury Skeleton */
 @utility skeleton-luxury {
   @apply bg-surface-container-high animate-pulse rounded-xl;
 }
 
-/* Luxury Page Container */
 @utility page-luxury {
   @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
 }
@@ -673,7 +643,6 @@
   @apply mt-2 text-body-md text-on-surface-variant;
 }
 
-/* Luxury Section */
 @utility section-luxury {
   @apply space-y-6;
 }
@@ -686,7 +655,6 @@
   @apply text-body-md text-on-surface-variant mt-1;
 }
 
-/* Luxury Grid */
 @utility grid-luxury {
   @apply grid gap-6;
 }
@@ -695,7 +663,6 @@
 @utility grid-luxury-3 { @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3; }
 @utility grid-luxury-4 { @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-4; }
 
-/* Luxury Stats Card */
 @utility stat-luxury {
   @apply luxury-card p-6;
 }
@@ -724,7 +691,6 @@
   @apply text-error;
 }
 
-/* Luxury Empty State */
 @utility empty-luxury {
   @apply flex flex-col items-center justify-center py-16 px-6 text-center;
 }
@@ -745,7 +711,6 @@
   @apply mt-6;
 }
 
-/* Luxury Loading */
 @utility loading-luxury {
   @apply flex items-center justify-center py-12;
 }
@@ -754,7 +719,6 @@
   @apply w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin;
 }
 
-/* Animations */
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -792,11 +756,8 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -804,8 +765,8 @@
   }
 }
 
+
 @layer utilities {
-  /* Text Gradient */
   .text-gradient-luxury {
     @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
   }
@@ -814,7 +775,6 @@
     @apply bg-gradient-to-r from-tertiary to-secondary bg-clip-text text-transparent;
   }
 
-  /* Glass Effect */
   .glass-luxury {
     @apply bg-white/70 backdrop-blur-xl border border-white/20;
   }
@@ -823,28 +783,23 @@
     @apply bg-inverse-surface/70 backdrop-blur-xl border border-inverse-surface/20;
   }
 
-  /* Gradient Borders */
   .border-gradient-luxury {
     @apply relative before:absolute before:inset-0 before:rounded-[inherit] before:bg-gradient-to-r before:from-primary before:to-secondary before:-z-10;
   }
 
-  /* Focus Ring */
   .focus-ring-luxury {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface;
   }
 
-  /* Truncate */
   .truncate-1 { @apply truncate; }
   .truncate-2 { @apply overflow-hidden text-ellipsis whitespace-nowrap; }
   .truncate-3 { @apply overflow-hidden text-ellipsis; }
 
-  /* Container */
   .container-luxury {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 }
 
-/* Animation Utilities - Using @utility at top level for Tailwind v4 compatibility */
 @utility animate-fade-in {
   animation: fade-in var(--transition-normal) ease-out;
 }

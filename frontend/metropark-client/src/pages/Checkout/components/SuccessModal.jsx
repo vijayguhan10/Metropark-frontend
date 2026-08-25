@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, ArrowRight as ArrowRightIcon, MapPin as MapPinIcon } from 'lucide-react';
+import { CheckCircle, ArrowRight as ArrowRightIcon, MapPin as MapPinIcon, Car, Hash, ShieldCheck } from 'lucide-react';
 import { formatCurrency, formatTime } from '../utils/formatters';
 
 const SuccessModal = ({ 
@@ -12,17 +12,22 @@ const SuccessModal = ({
   duration,
   totalAmount,
   entryTime,
-  animationState
+  animationState,
+  sessionData
 }) => {
   if (!isOpen) return null;
 
+  const displaySlot = sessionData?.slotDisplayCode || slotId;
+  const displayLocationName = sessionData?.locationName || location?.name || 'Parking Location';
+  const displayVehicleNumber = sessionData?.vehicleNumber;
+
   return (
     <div
-      className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center"
+      className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="fixed z-[70] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-4 bg-surface-container-lowest rounded-3xl shadow-luxury-lg border border-outline-variant/50 p-8 text-center"
+        className="fixed z-[70] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-luxury-lg border border-outline-variant/50 p-6 sm:p-8 text-center max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Success Animation */}
@@ -37,17 +42,43 @@ const SuccessModal = ({
         
         <h3 className="text-headline-lg font-bold text-on-surface mb-2">Booking Confirmed!</h3>
         <p className="text-body-md text-on-surface-variant mb-6">
-          Your spot <strong className="text-on-surface">{slotId}</strong> at <strong className="text-on-surface">{location.name}</strong> is now reserved.
+          Your spot <strong className="text-on-surface">{displaySlot}</strong> at <strong className="text-on-surface">{displayLocationName}</strong> is now reserved.
         </p>
         
-        <div className="luxury-card p-4 mb-6 text-left">
-          <div className="flex justify-between text-label-md mb-2">
+        <div className="luxury-card p-4 mb-6 text-left space-y-2 text-sm">
+          {sessionData?.sessionId && (
+            <div className="flex justify-between text-label-md">
+              <span className="text-on-surface-variant flex items-center gap-1.5">
+                <Hash className="w-4 h-4 text-primary" /> Session ID
+              </span>
+              <span className="font-mono font-bold text-on-surface">#{sessionData.sessionId}</span>
+            </div>
+          )}
+          {displayVehicleNumber && (
+            <div className="flex justify-between text-label-md">
+              <span className="text-on-surface-variant flex items-center gap-1.5">
+                <Car className="w-4 h-4 text-primary" /> Vehicle Number
+              </span>
+              <span className="font-mono font-semibold text-on-surface">{displayVehicleNumber}</span>
+            </div>
+          )}
+          {sessionData?.sessionStatus && (
+            <div className="flex justify-between text-label-md">
+              <span className="text-on-surface-variant flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-primary" /> Status
+              </span>
+              <span className="font-semibold text-success capitalize">{sessionData.sessionStatus}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-label-md pt-1 border-t border-outline-variant/30">
             <span className="text-on-surface-variant">Total Paid</span>
             <span className="font-bold text-on-surface">{formatCurrency(totalAmount)}</span>
           </div>
-          <div className="flex justify-between text-label-md mb-2">
+          <div className="flex justify-between text-label-md">
             <span className="text-on-surface-variant">Duration</span>
-            <span className="font-medium text-on-surface">{duration} hours</span>
+            <span className="font-medium text-on-surface">
+              {sessionData?.durationMinutes ? `${(sessionData.durationMinutes / 60).toFixed(1)} hrs` : `${duration} hours`}
+            </span>
           </div>
           <div className="flex justify-between text-label-md">
             <span className="text-on-surface-variant">Entry Time</span>

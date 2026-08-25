@@ -9,7 +9,6 @@ export const useTimeValidation = (initialEntryTime, initialExitTime) => {
   const [timeErrors, setTimeErrors] = useState({});
   const [showTimePicker, setShowTimePicker] = useState({ entry: false, exit: false });
 
-  // Validate time inputs - returns validation result without side effects
   const validateTimes = useCallback(() => {
     const errors = {};
     const now = new Date();
@@ -18,8 +17,6 @@ export const useTimeValidation = (initialEntryTime, initialExitTime) => {
     const entry = parseTimeInput(entryTimeInput, entryTime);
     const exit = parseTimeInput(exitTimeInput, exitTime);
 
-    // Allow a grace window so the default "now" entry time doesn't become
-    // invalid as the clock ticks past the minute the page was loaded.
     const GRACE_MS = 15 * 60 * 1000;
     if (entry.getTime() < now.getTime() - GRACE_MS) {
       errors.entry = 'Entry time cannot be in the past';
@@ -38,14 +35,12 @@ export const useTimeValidation = (initialEntryTime, initialExitTime) => {
     return { isValid: Object.keys(errors).length === 0, errors };
   }, [entryTimeInput, exitTimeInput, entryTime, exitTime]);
 
-  // Validate times and update errors state (called from event handlers)
   const validateAndSetErrors = useCallback(() => {
     const { isValid, errors } = validateTimes();
     setTimeErrors(errors);
     return isValid;
   }, [validateTimes]);
 
-  // Handle time input changes
   const handleEntryTimeChange = (value) => {
     setEntryTimeInput(value);
     const parsed = parseTimeInput(value, entryTime);
@@ -68,7 +63,6 @@ export const useTimeValidation = (initialEntryTime, initialExitTime) => {
     }
   };
 
-  // Quick duration buttons
   const setQuickDuration = (hours) => {
     const newExit = new Date(entryTime.getTime() + hours * 60 * 60 * 1000);
     setExitTime(newExit);

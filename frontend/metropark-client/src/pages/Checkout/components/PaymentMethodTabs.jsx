@@ -12,7 +12,6 @@ const getMethodIcon = (methodName) => {
 };
 
 const PaymentMethodTabs = ({ selectedPaymentMethod, onPaymentMethodChange, paymentMethods = [], methodsLoading = false, methodsError = null }) => {
-  // If loading, show skeleton placeholders
   if (methodsLoading) {
     return (
       <div className="luxury-card p-1 bg-surface-container-low rounded-2xl">
@@ -25,7 +24,6 @@ const PaymentMethodTabs = ({ selectedPaymentMethod, onPaymentMethodChange, payme
     );
   }
 
-  // If error, show error state
   if (methodsError) {
     return (
       <div className="luxury-card p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
@@ -34,7 +32,6 @@ const PaymentMethodTabs = ({ selectedPaymentMethod, onPaymentMethodChange, payme
     );
   }
 
-  // If no payment methods available
   if (!paymentMethods || paymentMethods.length === 0) {
     return (
       <div className="luxury-card p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl">

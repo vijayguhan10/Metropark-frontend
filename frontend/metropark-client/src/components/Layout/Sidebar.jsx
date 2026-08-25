@@ -4,10 +4,8 @@ import {
   LayoutDashboard,
   Calendar,
   History,
-  HelpCircle,
   LogOut,
   User,
-  Settings,
   PlusCircle,
   Compass,
 } from 'lucide-react';
@@ -22,8 +20,6 @@ const navigation = [
 
 const bottomNavigation = [
   { name: 'Profile', href: '/profile', icon: User },
-  { name: 'Settings', href: '/settings', icon: Settings },
-  { name: 'Help', href: '/help', icon: HelpCircle },
 ];
 
 export default function Sidebar() {

@@ -11,12 +11,7 @@ export const getSlotTypeLabel = (type) => {
 };
 
 export const getSlotTypeIcon = (type) => {
-  switch (type) {
-    case 'ev': return 'ev';
-    case 'oversize': return 'oversize';
-    case 'compact': return 'compact';
-    default: return 'standard';
-  }
+  return null;
 };
 
 export const getSlotTypeColor = (type) => {

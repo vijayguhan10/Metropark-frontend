@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Compass, Map, Calendar, User, Dock, LayoutDashboard } from 'lucide-react';
+import { Compass, Map, Calendar, User, LayoutDashboard } from 'lucide-react';
 
 const mobileNavItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },

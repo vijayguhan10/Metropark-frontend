@@ -10,7 +10,6 @@ import Checkout from './pages/Checkout/Checkout';
 import History from './pages/History/History';
 import Reservations from './pages/Reservations/Reservations';
 import Profile from './pages/Profile/Profile';
-import Settings from './pages/Settings/Settings';
 import Explorer from './pages/Explorer/Explorer';
 
 function App() {
@@ -21,22 +20,24 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route
             path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
+            element={<Layout />}
           >
-            <Route index element={<Dashboard />} />
+            <Route index element={<Navigate to="/explorer" replace />} />
             <Route path="explorer" element={<Explorer />} />
             <Route path="map" element={<SlotMap />} />
             <Route path="reservations" element={<Reservations />} />
-            <Route path="checkout" element={<Checkout />} />
             <Route path="history" element={<History />} />
             <Route path="profile" element={<Profile />} />
-            <Route path="settings" element={<Settings />} />
+            <Route
+              path="checkout"
+              element={
+                <ProtectedRoute>
+                  <Checkout />
+                </ProtectedRoute>
+              }
+            />
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/explorer" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

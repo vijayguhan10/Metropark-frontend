@@ -6,4 +6,5 @@ export const ENDPOINTS = {
   PAYMENTS: '/api/payments',
   PAYMENT_METHODS: '/api/payment-methods',
   VEHICLES: '/api/vehicles',
+  WALLET: '/api/wallet',
 };

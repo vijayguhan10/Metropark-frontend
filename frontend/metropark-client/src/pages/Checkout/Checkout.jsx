@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -10,55 +10,54 @@ import {
   AlertCircle,
   CheckCircle,
   MapPin as MapPinIcon,
-  Car,
   Clock,
+  Plus,
+  Wallet as WalletIcon,
 } from 'lucide-react';
-import { parkingLocations } from '../../data/mockData';
+import { parkingLocations, vehicles as mockVehicles } from '../../data/mockData';
 import {
   Header,
   LocationSlotCard,
+  VehicleCard,
   PriceBreakdown,
   InfoNotice,
-  PaymentMethodTabs,
-  CardPaymentForm,
-  ApplePayForm,
   SuccessModal,
   ProcessingModal,
+  WalletModal,
 } from './components';
-import { useCardValidation } from './hooks';
 import { formatCurrency } from './utils/formatters';
 import { useAuth } from '../../context/AuthContext';
-import { reservationsApi, parkingSessionsApi, paymentsApi, paymentMethodsApi, gatesApi, toLocalDateTime } from '../../api';
+import { parkingSessionsApi, vehiclesApi, walletApi, toLocalDateTime } from '../../api';
+
+const SESSION_KEY = 'activeSession';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { session, isAuthenticated } = useAuth();
 
-  // Get params from URL (passed from Explorer)
   const locationId = searchParams.get('location');
-  const vehicleType = parseInt(searchParams.get('vehicle_type')) || 1; // 1=Standard, 2=Compact, 3=EV, 4=Oversize
-  const vehicleTypeLabel = searchParams.get('vehicle_type_label') || 'Standard';
-  const selectedDate = searchParams.get('date');
-  const selectedTime = searchParams.get('time');
+  const slotId = searchParams.get('slotId') || searchParams.get('slot_id');
+  const fromDate = searchParams.get('fromDate') || searchParams.get('from_date');
+  const toDate = searchParams.get('toDate') || searchParams.get('to_date');
   const rate = parseFloat(searchParams.get('rate')) || 5;
 
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [animationState, setAnimationState] = useState('initial');
   const [bookingError, setBookingError] = useState(null);
   const [toast, setToast] = useState(null);
 
-  // Sequential flow state
-  const [reservationId, setReservationId] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
-  const [stepLoading, setStepLoading] = useState(null);
+  const [vehiclesList, setVehiclesList] = useState([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [vehiclesError, setVehiclesError] = useState(null);
 
-  // Payment methods (from API)
-  const [paymentMethodList, setPaymentMethodList] = useState([]);
-  const [methodsLoading, setMethodsLoading] = useState(true);
-  const [methodsError, setMethodsError] = useState(null);
+  const [sessionResponse, setSessionResponse] = useState(null);
+
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [walletLoading, setWalletLoading] = useState(false);
 
   const location = parkingLocations.find((l) => l.id === locationId) || parkingLocations[0];
 
@@ -67,21 +66,13 @@ export default function Checkout() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const vehicleTypes = {
-    1: { label: 'Standard', icon: Car },
-    2: { label: 'Compact', icon: Car },
-    3: { label: 'EV', icon: Car },
-    4: { label: 'Oversize', icon: Car },
-  };
-
-  const selectedVehicleType = vehicleTypes[vehicleType] || vehicleTypes[1];
-
-  // Calculate duration from selected time (assume 2 hours default, or calculate from time)
   const getDuration = () => {
-    if (!selectedTime) return 2;
-    const [hours] = selectedTime.split(':').map(Number);
-    // Default 2 hours, or calculate based on time of day
-    return 2;
+    if (!fromDate || !toDate) return 2;
+    const start = new Date(fromDate);
+    const end = new Date(toDate);
+    const diffMs = end - start;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return Math.max(0.5, Math.ceil(diffHours * 2) / 2); // Round to nearest 0.5 hour
   };
 
   const duration = getDuration();
@@ -90,180 +81,178 @@ export default function Checkout() {
   const tax = baseAmount * 0.08;
   const totalAmount = baseAmount + serviceCharge + tax;
 
-  const {
-    cardFormData, cardErrors, isCardFocused, setCardFocused,
-    validateCard, handleCardChange, getCardBrand,
-  } = useCardValidation();
-
-  // Extract an id from a response that may be a bare number, string, or object
-  const extractId = (res, ...keys) => {
-    if (typeof res === 'number') return res;
-    if (typeof res === 'string') return parseInt(res, 10);
-    for (const k of keys) if (res?.[k] != null) return res[k];
-    return res?.id ?? null;
-  };
-
-  // Fetch payment methods on page load
   useEffect(() => {
     let cancelled = false;
-    setMethodsLoading(true);
-    setMethodsError(null);
-    paymentMethodsApi.getAll()
-      .then((data) => {
-        if (cancelled) return;
-        const active = (Array.isArray(data) ? data : []).filter(
-          (m) => (m.isActive ?? m.is_active) !== false
-        );
-        setPaymentMethodList(active);
-        if (active.length) {
-          setSelectedPaymentMethod(String(active[0].methodId ?? active[0].method_id));
+    async function loadVehicles() {
+      setVehiclesLoading(true);
+      setVehiclesError(null);
+      try {
+        // Fetch the vehicles for the active user from /api/vehicles/user/{userId}.
+        const userId = getActiveUserId();
+        let fetchedData = null;
+
+        if (userId) {
+          try {
+            fetchedData = await vehiclesApi.getByUserPath(userId);
+          } catch (e) {
+            console.error('Failed to load user vehicles:', e);
+            fetchedData = null;
+          }
         }
-      })
-      .catch((err) => {
-        if (!cancelled) setMethodsError(err.message || 'Could not load payment methods.');
-      })
-      .finally(() => {
-        if (!cancelled) setMethodsLoading(false);
-      });
+
+        if (!fetchedData || (Array.isArray(fetchedData) && fetchedData.length === 0)) {
+          fetchedData = await vehiclesApi.getAll();
+        }
+
+        if (!cancelled) {
+          let list = Array.isArray(fetchedData) ? fetchedData : fetchedData?.content || [];
+          if (list.length === 0) {
+            list = mockVehicles; // Fallback to mock data if API returns empty
+          }
+          setVehiclesList(list);
+          if (list.length > 0) {
+            const defaultVeh = list.find((v) => v.isDefault || v.is_default) || list[0];
+            const defId = String(defaultVeh.vehicleId || defaultVeh.id || defaultVeh.vehicle_id || 1);
+            setSelectedVehicleId(defId);
+          }
+          setVehiclesLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to load vehicles from API:', err);
+          setVehiclesList(mockVehicles);
+          if (mockVehicles.length > 0) {
+            setSelectedVehicleId(String(mockVehicles[0].id || mockVehicles[0].vehicleId || 1));
+          }
+          setVehiclesLoading(false);
+        }
+      }
+    }
+
+    loadVehicles();
     return () => { cancelled = true; };
-  }, []);
+  }, [session?.user_id]);
 
-  // Auto-select ACTIVE gates for this location
-  const [entryGateId, setEntryGateId] = useState(null);
-  const [exitGateId, setExitGateId] = useState(null);
+  const parseDateTime = (dateStr) => {
+    if (!dateStr) return new Date();
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
 
+  const entryTime = parseDateTime(fromDate);
+  const exitTime = parseDateTime(toDate);
+
+  // Read the active session from localStorage (never hardcode the user ID).
+  const getActiveUserId = () => {
+    try {
+      const stored = localStorage.getItem(SESSION_KEY);
+      if (!stored) return null;
+      const parsed = JSON.parse(stored);
+      return parsed?.user_id ?? parsed?.userId ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Fetch the wallet balance for the active user from /api/wallet/{userId}.
   useEffect(() => {
-    if (!locationId) return;
-    gatesApi.getAll()
-      .then((data) => {
-        const list = Array.isArray(data) ? data : [];
-        const matches = (g, type) =>
-          String(g.locationId ?? g.location_id ?? '') === String(locationId) &&
-          String(g.gateType ?? g.gate_type ?? '').toUpperCase() === type &&
-          String(g.status ?? g.gateStatus ?? 'ACTIVE').toUpperCase() === 'ACTIVE';
+    let cancelled = false;
+    const userId = getActiveUserId();
+    if (!userId) return undefined;
 
-        const entry = list.find((g) => matches(g, 'ENTRY'));
-        const exit = list.find((g) => matches(g, 'EXIT'));
+    async function loadBalance() {
+      setWalletLoading(true);
+      try {
+        const res = await walletApi.getBalance(userId);
+        if (!cancelled) {
+          const balance =
+            res?.balance ??
+            res?.walletBalance ??
+            res?.amount ??
+            (typeof res === 'number' ? res : 0);
+          setWalletBalance(Number(balance) || 0);
+        }
+      } catch (err) {
+        console.error('Failed to load wallet balance:', err);
+        if (!cancelled) setWalletBalance(0);
+      } finally {
+        if (!cancelled) setWalletLoading(false);
+      }
+    }
 
-        if (entry) setEntryGateId(entry.gateId ?? entry.gate_id ?? entry.id);
-        if (exit) setExitGateId(exit.gateId ?? exit.gate_id ?? exit.id);
-      })
-      .catch(() => {});
-  }, [locationId]);
+    loadBalance();
+    return () => { cancelled = true; };
+  }, [session?.user_id]);
 
-  // Parse entry/exit times from selected date and time
-  const parseDateTime = (dateStr, timeStr) => {
-    if (!dateStr || !timeStr) return new Date();
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    const date = new Date(dateStr);
-    date.setHours(hours, minutes, 0, 0);
-    return date;
-  };
-
-  const entryTime = parseDateTime(selectedDate, selectedTime);
-  const exitTime = new Date(entryTime.getTime() + duration * 60 * 60 * 1000);
-
-  // Step 1 — Create Reservation
-  const handleCreateReservation = async () => {
-    setBookingError(null);
-    setStepLoading('reservation');
-    try {
-      // For now, we'll create a reservation without a specific slot ID
-      // The backend should assign an available slot of the requested vehicle type
-      const res = await reservationsApi.create({
-        userId: session.user_id,
-        locationId: locationId,
-        vehicleTypeId: vehicleType,
-        entryTime: toLocalDateTime(entryTime),
-        exitTime: toLocalDateTime(exitTime),
+  // Open the wallet popup. If there is no active session/user ID, redirect to
+  // login and restore the wallet popup automatically after a successful login.
+  const handleAddMoneyClick = () => {
+    const userId = getActiveUserId();
+    if (!userId) {
+      const currentPath = window.location.pathname;
+      const currentSearch = window.location.search;
+      const sep = currentSearch ? '&' : '?';
+      navigate('/login', {
+        state: {
+          from: { pathname: currentPath, search: `${currentSearch}${sep}wallet=1` },
+        },
       });
-      const id = extractId(res, 'reservationId', 'reservation_id');
-      if (!id) throw new Error('Server did not return a reservationId.');
-      setReservationId(id);
-      showToast(`Reservation created (#${id}).`);
-    } catch (err) {
-      const msg = err.message || 'Could not create reservation.';
-      setBookingError(msg);
-      showToast(msg, 'error');
-    } finally {
-      setStepLoading(null);
+      return;
     }
+    setShowWalletModal(true);
   };
 
-  // Step 2 — Create Parking Session
-  const handleCreateSession = async () => {
-    if (!reservationId) return;
-
-    setBookingError(null);
-    setStepLoading('session');
-    try {
-      const body = {
-        reservationId,
-        userId: session.user_id,
-        vehicleTypeId: vehicleType,
-        sessionStatus: 'ACTIVE',
-        actualEntryTime: toLocalDateTime(entryTime),
-        expectedExitTime: toLocalDateTime(exitTime),
-      };
-      if (entryGateId) body.entryGateId = entryGateId;
-      if (exitGateId) body.exitGateId = exitGateId;
-
-      const res = await parkingSessionsApi.create(body);
-      const id = extractId(res, 'sessionId', 'session_id');
-      if (!id) throw new Error('Server did not return a sessionId.');
-      setSessionId(id);
-      showToast(`Parking session started (#${id}).`);
-    } catch (err) {
-      const msg = err.message || 'Could not create parking session.';
-      setBookingError(msg);
-      showToast(msg, 'error');
-    } finally {
-      setStepLoading(null);
+  // If the user was redirected to login to add money, reopen the wallet popup
+  // automatically once they return to the Checkout page.
+  useEffect(() => {
+    if (searchParams.get('wallet') === '1' && isAuthenticated) {
+      setShowWalletModal(true);
     }
-  };
+  }, [searchParams, isAuthenticated]);
 
-  // Step 3 — Payment
-  const handlePayment = async () => {
-    if (!sessionId) return;
-    if (selectedPaymentMethod === 'card' && !validateCard()) return;
+  const handleCreatePayment = async () => {
+    if (!selectedVehicleId) {
+      showToast('Please select a vehicle', 'error');
+      setBookingError('Please select a vehicle before proceeding.');
+      return;
+    }
 
     setBookingError(null);
-    setStepLoading('payment');
     setIsProcessing(true);
     setAnimationState('processing');
+
     try {
-      const now = toLocalDateTime();
-      const res = await paymentsApi.create({
-        transactionReference: null,
-        userId: session.user_id,
-        reservationId,
-        sessionId,
-        methodId: parseInt(selectedPaymentMethod, 10),
-        amount: parseFloat(totalAmount.toFixed(2)),
-        currency: 'INR',
-        paymentStatus: 'PENDING',
-        gatewayResponseCode: null,
-        gatewayResponseMessage: null,
-        processedAt: null,
-      });
+      const parsedVehId = parseInt(String(selectedVehicleId).replace(/\D/g, ''), 10) || 1;
+      const parsedSlotId = parseInt(String(slotId || '1').replace(/\D/g, ''), 10) || 1;
+      const userIdStr = String(session?.user_id || getActiveUserId() || 'user_001');
+      const locationIdStr = String(locationId || '');
 
-      const newPaymentId = extractId(res, 'paymentId', 'payment_id');
-      if (newPaymentId) {
-        // Payment ID stored if needed
-      }
+      const payload = {
+        vehicleId: parsedVehId,
+        userId: userIdStr,
+        locationId: locationIdStr,
+        slotId: parsedSlotId,
+        fromDate: toLocalDateTime(entryTime),
+        toDate: toLocalDateTime(exitTime),
+      };
 
-      showToast('Payment successful.');
+      console.log('Posting Parking Session payload:', payload);
+
+      const response = await parkingSessionsApi.create(payload);
+
+      console.log('Parking Session response:', response);
+      setSessionResponse(response);
+
+      showToast('Booking session created successfully!');
       setIsProcessing(false);
       setAnimationState('success');
       setShowSuccessModal(true);
     } catch (err) {
       setIsProcessing(false);
       setAnimationState('enter');
-      const msg = err.message || 'Payment failed. Please try again.';
+      const msg = err.message || 'Failed to create parking session. Please try again.';
       setBookingError(msg);
       showToast(msg, 'error');
-    } finally {
-      setStepLoading(null);
     }
   };
 
@@ -287,71 +276,49 @@ export default function Checkout() {
 
   return (
     <>
-      <Header locationId={locationId} onBackClick={() => navigate('/explorer')} />
-      <main className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-8 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <Header locationId={locationId} onBackClick={() => navigate('/explorer')} onAddMoney={handleAddMoneyClick} />
+      <main className="relative z-10 w-full px-4 sm:px-6 lg:px-8 py-4 pb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left column - Booking Summary */}
-          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+          <div className="lg:col-span-7 xl:col-span-8 space-y-4">
             <LocationSlotCard 
               location={location} 
-              slotId={`${selectedVehicleType.label} Slot`} 
-              floor={selectedDate ? new Date(selectedDate).toLocaleDateString() : 'Today'} 
-              slotType={selectedVehicleType.label}
+              slotId={`Slot ${slotId}`} 
+              floor={fromDate ? new Date(fromDate).toLocaleDateString() : 'Today'} 
+              slotType="Standard"
             />
 
-            {/* Vehicle Type Selection */}
-            <div className="luxury-card">
-              <h3 className="text-on-surface font-semibold text-lg mb-4 flex items-center gap-2">
-                <Car className="w-5 h-5 text-primary" />
-                Vehicle Type
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {Object.entries(vehicleTypes).map(([key, vtype]) => (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      // Update URL with new vehicle type
-                      const params = new URLSearchParams(searchParams);
-                      params.set('vehicle_type', key);
-                      params.set('vehicle_type_label', vtype.label);
-                      navigate(`/checkout?${params.toString()}`);
-                    }}
-                    className={`luxury-card p-4 transition-all text-center border-2 ${
-                      vehicleType === parseInt(key)
-                        ? "border-primary bg-primary-light"
-                        : 'border-outline-variant/50 hover:border-primary/30'
-                    }`}
-                  >
-                    <vtype.icon className="w-8 h-8 mx-auto mb-2 text-primary" />
-                    <div className="font-medium text-on-surface">{vtype.label}</div>
-                    <div className="text-xs text-on-surface-variant">${rate}/hr</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Vehicle Selection Card */}
+            <VehicleCard
+              vehicles={vehiclesList}
+              selectedVehicleId={selectedVehicleId}
+              onSelectVehicle={setSelectedVehicleId}
+              isLoading={vehiclesLoading}
+              error={vehiclesError}
+            />
 
             {/* Date & Time Summary */}
-            <div className="luxury-card">
-              <h3 className="text-on-surface font-semibold text-lg mb-4 flex items-center gap-2">
+            <div className="luxury-card p-4">
+              <h3 className="text-on-surface font-semibold text-base mb-3 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-primary" />
                 Date & Time
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="p-3 bg-surface-container rounded-xl">
-                  <div className="text-xs text-on-surface-variant mb-1">Date</div>
-                  <div className="font-medium text-on-surface">{selectedDate ? new Date(selectedDate).toLocaleDateString() : 'Today'}</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                <div className="p-2.5 bg-surface-container rounded-xl">
+                  <div className="text-xs text-on-surface-variant mb-1">Start Date</div>
+                  <div className="font-medium text-on-surface text-sm">{fromDate ? new Date(fromDate).toLocaleDateString() : 'Today'}</div>
                 </div>
-                <div className="p-3 bg-surface-container rounded-xl">
+                <div className="p-2.5 bg-surface-container rounded-xl">
                   <div className="text-xs text-on-surface-variant mb-1">Entry Time</div>
-                  <div className="font-medium text-on-surface">{selectedTime || 'Now'}</div>
+                  <div className="font-medium text-on-surface text-sm">{fromDate ? new Date(fromDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Now'}</div>
                 </div>
-                <div className="p-3 bg-surface-container rounded-xl">
-                  <div className="text-xs text-on-surface-variant mb-1">Duration</div>
-                  <div className="font-medium text-on-surface">{duration} hrs</div>
+                <div className="p-2.5 bg-surface-container rounded-xl">
+                  <div className="text-xs text-on-surface-variant mb-1">End Date</div>
+                  <div className="font-medium text-on-surface text-sm">{toDate ? new Date(toDate).toLocaleDateString() : 'Today'}</div>
                 </div>
-                <div className="p-3 bg-surface-container rounded-xl">
+                <div className="p-2.5 bg-surface-container rounded-xl">
                   <div className="text-xs text-on-surface-variant mb-1">Exit Time</div>
-                  <div className="font-medium text-on-surface">{exitTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                  <div className="font-medium text-on-surface text-sm">{toDate ? new Date(toDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Later'}</div>
                 </div>
               </div>
             </div>
@@ -368,33 +335,45 @@ export default function Checkout() {
             <InfoNotice />
           </div>
 
-          {/* Right column – Payment */}
+          {/* Right column – Booking Summary */}
           <aside className="lg:col-span-5 xl:col-span-4">
-            <div className="sticky top-24 space-y-6">
-              <PaymentMethodTabs
-                selectedPaymentMethod={selectedPaymentMethod}
-                onPaymentMethodChange={setSelectedPaymentMethod}
-                paymentMethods={paymentMethodList}
-                methodsLoading={methodsLoading}
-                methodsError={methodsError}
-              />
-
-              {selectedPaymentMethod && !methodsLoading && !methodsError && (
-                <>
-                  {selectedPaymentMethod === 'card' && (
-                    <CardPaymentForm
-                      cardFormData={cardFormData}
-                      cardErrors={cardErrors}
-                      isCardFocused={isCardFocused}
-                      handleCardChange={handleCardChange}
-                      handleCardFocus={(field) => setCardFocused((p) => ({ ...p, [field]: true }))}
-                      handleCardBlur={(field) => setCardFocused((p) => ({ ...p, [field]: false }))}
-                      getCardBrand={getCardBrand}
-                    />
+            <div className="sticky top-20 space-y-4">
+              {/* Wallet Balance */}
+              <div className="luxury-card p-5 relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-violet/10 pointer-events-none" />
+                <div className="absolute -bottom-12 -left-8 w-32 h-32 rounded-full bg-violet/5 pointer-events-none" />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-label-md text-on-surface-variant font-medium uppercase tracking-wider">
+                      Wallet Balance
+                    </span>
+                    <button
+                      onClick={handleAddMoneyClick}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-label-sm font-semibold rounded-lg bg-violet text-on-violet hover:bg-violet-hover transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Money
+                    </button>
+                  </div>
+                  {walletLoading ? (
+                    <div className="flex items-center gap-2 py-1">
+                      <Loader2 className="w-5 h-5 animate-spin text-violet" />
+                      <span className="text-body-md text-on-surface-variant">Loading balance...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-end gap-2">
+                      <span className="text-display-md font-bold text-on-surface tracking-tight">
+                        {formatCurrency(walletBalance)}
+                      </span>
+                      <span className="text-label-md text-on-surface-variant mb-1.5">available</span>
+                    </div>
                   )}
-                  {selectedPaymentMethod === 'apple_pay' && <ApplePayForm />}
-                </>
-              )}
+                  <div className="mt-3 pt-3 border-t border-outline-variant/50 flex items-center gap-2 text-label-sm text-on-surface-variant">
+                    <WalletIcon className="w-4 h-4 text-violet" />
+                    <span>Use your wallet for quick, secure parking payments</span>
+                  </div>
+                </div>
+              </div>
 
               {/* Step toast */}
               {toast && (
@@ -426,68 +405,20 @@ export default function Checkout() {
                 </p>
               </div>
 
-              {/* Step 1 — Reservation */}
+              {/* Create Booking Button */}
               <button
-                className="btn-luxury-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleCreateReservation}
-                disabled={!!reservationId || stepLoading !== null}
+                className="btn-luxury-primary w-full disabled:opacity-50 disabled:cursor-not-allowed py-4 text-lg"
+                onClick={handleCreatePayment}
+                disabled={isProcessing || !selectedVehicleId || vehiclesLoading}
               >
-                {stepLoading === 'reservation' ? (
+                {isProcessing ? (
                   <>
                     <Loader2 className="w-6 h-6 animate-spin" />
-                    <span>Reserving…</span>
-                  </>
-                ) : reservationId ? (
-                  <>
-                    <CheckCircle className="w-5 h-5" />
-                    <span>Reserved #{reservationId}</span>
+                    <span>Creating Booking...</span>
                   </>
                 ) : (
                   <>
-                    <span>1. Reserve Spot</span>
-                    <ArrowRightIcon className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-
-              {/* Step 2 — Parking Session */}
-              <button
-                className="btn-luxury-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleCreateSession}
-                disabled={!reservationId || !!sessionId || stepLoading !== null}
-              >
-                {stepLoading === 'session' ? (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    <span>Starting Session…</span>
-                  </>
-                ) : sessionId ? (
-                  <>
-                    <CheckCircle className="w-5 h-5" />
-                    <span>Session #{sessionId}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>2. Start Parking</span>
-                    <ArrowRightIcon className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-
-              {/* Step 3 — Payment */}
-              <button
-                className="btn-luxury-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handlePayment}
-                disabled={!sessionId || stepLoading !== null || !selectedPaymentMethod || methodsLoading}
-              >
-                {stepLoading === 'payment' ? (
-                  <>
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    <span>Processing…</span>
-                  </>
-                ) : (
-                  <>
-                    <span>3. Pay {formatCurrency(totalAmount)}</span>
+                    <span>Confirm Booking {formatCurrency(totalAmount)}</span>
                     <ArrowRightIcon className="w-5 h-5" />
                   </>
                 )}
@@ -510,20 +441,30 @@ export default function Checkout() {
         </div>
       </main>
 
+      <WalletModal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        userId={getActiveUserId()}
+        initialBalance={walletBalance}
+        onBalanceUpdate={setWalletBalance}
+      />
+
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
         onViewPass={() => { setShowSuccessModal(false); navigate('/reservations'); }}
         onFindAnotherSpot={() => { setShowSuccessModal(false); navigate('/explorer'); }}
-        slotId={`${selectedVehicleType.label} Slot`}
+        slotId={`Slot ${slotId}`}
         location={location}
         duration={duration}
         totalAmount={totalAmount}
         entryTime={entryTime}
         animationState={animationState}
+        sessionData={sessionResponse}
       />
 
       <ProcessingModal isProcessing={isProcessing} />
     </>
   );
 }
+

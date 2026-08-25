@@ -297,7 +297,3 @@ export default function Dashboard() {
     </div>
   );
 }
-//the world of fu
-// .overflow-hidden {
-//  overflow: hidden;
-// }
